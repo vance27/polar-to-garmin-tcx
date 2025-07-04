@@ -3,3 +3,5 @@ dist/
 
 tcx-files/*
 !tcx-files/.gitkeep
+
+.env.local
