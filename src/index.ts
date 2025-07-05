@@ -1,10 +1,8 @@
 import fs from "fs/promises";
 import path from "path";
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { config } from "dotenv";
 
 import { PolarToGarminTCXConverter } from "./claude-generated.js";
-import { GarminTcxDocument } from "./garmin-interface.js";
 
 config({ path: ".env" });
 config({ path: ".env.local", override: true });

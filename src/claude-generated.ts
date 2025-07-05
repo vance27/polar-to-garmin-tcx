@@ -1,4 +1,10 @@
-import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import {
+  XMLParser,
+  XMLBuilder,
+  X2jOptions,
+  validationOptions,
+  XmlBuilderOptions,
+} from "fast-xml-parser";
 import {
   Activity,
   Extensions,
@@ -76,8 +82,8 @@ import {
 // }
 
 export class PolarToGarminTCXConverter {
-  private parserOptions: any;
-  private builderOptions: any;
+  private parserOptions: X2jOptions;
+  private builderOptions: XmlBuilderOptions;
   private parser: XMLParser;
   private builder: XMLBuilder;
 
@@ -86,7 +92,6 @@ export class PolarToGarminTCXConverter {
       ignoreAttributes: false,
       attributeNamePrefix: "@_",
       parseAttributeValue: true,
-      parseNodeValue: true,
       trimValues: true,
     };
 
