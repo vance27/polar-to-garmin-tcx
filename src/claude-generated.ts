@@ -1,68 +1,79 @@
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
+import {
+  Activity,
+  Extensions,
+  GarminTcxDocument,
+  HeartRateBpm,
+  Lap,
+  Position,
+  Track,
+  Trackpoint,
+  TrainingCenterDatabase,
+} from "./garmin-interface.js";
 
-interface Position {
-  LatitudeDegrees: number;
-  LongitudeDegrees: number;
-}
+// interface Position {
+//   LatitudeDegrees: number;
+//   LongitudeDegrees: number;
+// }
 
-interface HeartRateBpm {
-  Value: number;
-}
+// interface HeartRateBpm {
+//   Value: number;
+// }
 
-interface Extensions {
-  "ns3:TPX": {
-    "@_xmlns:ns3": string;
-    "ns3:Speed": string;
-    "ns3:Watts"?: number;
-    "ns3:CadenceRPM": number;
-  };
-}
+// interface Extensions {
+//   "ns3:TPX": {
+//     "@_xmlns:ns3": string;
+//     "ns3:Speed": string;
+//     "ns3:Watts"?: number;
+//     "ns3:CadenceRPM": number;
+//   };
+// }
 
-interface Trackpoint {
-  Time: string;
-  Position?: Position;
-  AltitudeMeters?: number;
-  DistanceMeters?: number;
-  HeartRateBpm?: HeartRateBpm;
-  Extensions?: Extensions;
-}
+// interface Trackpoint {
+//   Time: string;
+//   Position?: Position;
+//   AltitudeMeters?: number;
+//   DistanceMeters?: number;
+//   HeartRateBpm?: HeartRateBpm;
+//   Extensions?: Extensions;
+// }
 
-interface Track {
-  Trackpoint: Trackpoint[];
-}
+// interface Track {
+//   Trackpoint: Trackpoint[];
+// }
 
-interface Lap {
-  "@_StartTime": string;
-  TotalTimeSeconds: number;
-  DistanceMeters: number;
-  MaximumSpeed: number;
-  Calories: number;
-  AverageHeartRateBpm: HeartRateBpm;
-  MaximumHeartRateBpm: HeartRateBpm;
-  Intensity: string;
-  Cadence: number;
-  TriggerMethod: string;
-  Track: Track;
-}
+// interface Lap {
+//   "@_StartTime": string;
+//   TotalTimeSeconds: number;
+//   DistanceMeters: number;
+//   MaximumSpeed: number;
+//   Calories: number;
+//   AverageHeartRateBpm: HeartRateBpm;
+//   MaximumHeartRateBpm: HeartRateBpm;
+//   Intensity: string;
+//   Cadence: number;
+//   TriggerMethod: string;
+//   Track: Track;
+// }
 
-interface Activity {
-  "@_Sport": string;
-  Id: string;
-  Lap: Lap[];
-  Notes: string;
-  Training: any;
-  Creator: any;
-}
+// interface Activity {
+//   "@_Sport": string;
+//   Id: string;
+//   Lap: Lap[];
+//   Notes: string;
+//   Training: any;
+//   Creator: any;
+// }
 
-interface TrainingCenterDatabase {
-  "@_xmlns": string;
-  "@_xmlns:xsi": string;
-  "@_xsi:schemaLocation": string;
-  Activities: {
-    Activity: Activity[];
-  };
-  Author: any;
-}
+// interface TrainingCenterDatabase {
+//   "@_xmlns": string;
+//   "@_xmlns:xsi": string;
+//   "@_xsi:schemaLocation": string;
+//   Activities: {
+//     Activity: Activity[];
+//   };
+//   Author: any;
+// }
 
 export class PolarToGarminTCXConverter {
   private parserOptions: any;
@@ -107,7 +118,11 @@ export class PolarToGarminTCXConverter {
     const tcxData = polarData.TrainingCenterDatabase || polarData;
 
     // Create Garmin-compatible structure
-    const garminStructure = {
+    const garminStructure: GarminTcxDocument = {
+      "?xml": {
+        "@_version": "1.0",
+        "@_encoding": "UTF-8",
+      },
       TrainingCenterDatabase: {
         "@_xmlns": "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2",
         "@_xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
@@ -125,19 +140,18 @@ export class PolarToGarminTCXConverter {
     return garminStructure;
   }
 
-  private transformActivity(activity: any): Activity[] {
-    if (!activity) return [];
+  private transformActivity(activity: any): Activity {
+    if (!activity) throw new Error("No activity in base document");
+    if (Array.isArray(activity))
+      throw new Error("Cannot process activity with multiple activities");
 
-    const activityArray = Array.isArray(activity) ? activity : [activity];
-
-    return activityArray.map((act) => ({
-      "@_Sport": act["@_Sport"] || "Running",
-      Id: act.Id || this.generateActivityId(),
-      Lap: this.transformLaps(act.Lap),
-      Notes: act.Notes || "",
+    return {
+      "@_Sport": activity["@_Sport"] || "Running",
+      Id: activity.Id || this.generateActivityId(),
+      Lap: this.transformLaps(activity.Lap),
       Training: this.createTrainingElement(),
       Creator: this.createGarminCreator(),
-    }));
+    };
   }
 
   private transformLaps(laps: any): Lap[] {
