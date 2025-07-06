@@ -4,10 +4,10 @@ import {
     X2jOptions,
     XmlBuilderOptions,
 } from 'fast-xml-parser';
-import { Activities, GarminTcxDocument } from '../types/garmin-zod.js';
-import { transformLap } from './track-data-enhancer.js';
-import { PolarActivities, PolarTcxDocument } from '../types/polar-zod.js';
-import { defaultGarminCreator, defaultGarminTcxDocument } from './defaults.js';
+import { GarminTcxDocument } from '../types/garmin-zod.js';
+import { transformActivities } from './track-data-enhancer.js';
+import { PolarTcxDocument } from '../types/polar-zod.js';
+import { defaultGarminTcxDocument } from './defaults.js';
 
 export class PolarToGarminTCXConverter {
     private parserOptions: X2jOptions;
@@ -42,16 +42,14 @@ export class PolarToGarminTCXConverter {
             // Parse the raw string in Polar schema
             const polarData = PolarTcxDocument.parse(parsed);
 
-            const activities = this.transformActivity(
-                polarData.TrainingCenterDatabase.Activities
-            );
-
             // Create Garmin-compatible structure
             const garminData: GarminTcxDocument = {
                 ...defaultGarminTcxDocument,
                 TrainingCenterDatabase: {
                     ...defaultGarminTcxDocument.TrainingCenterDatabase,
-                    Activities: activities,
+                    Activities: transformActivities(
+                        polarData.TrainingCenterDatabase.Activities.Activity
+                    ),
                 },
             };
 
@@ -67,20 +65,5 @@ export class PolarToGarminTCXConverter {
     public static convertFile(polarTcxContent: string): string {
         const converter = new PolarToGarminTCXConverter();
         return converter.convertPolarToGarmin(polarTcxContent);
-    }
-
-    private transformActivity(activities: PolarActivities): Activities {
-        const activity = activities.Activity;
-
-        const transformedLap = transformLap(activity.Lap);
-
-        return {
-            Activity: {
-                '@_Sport': activity['@_Sport'] || 'Running',
-                Id: activity.Id,
-                Lap: transformedLap,
-                Creator: defaultGarminCreator,
-            },
-        };
     }
 }

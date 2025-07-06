@@ -1,6 +1,13 @@
 import { enhanceTrackDataWithSpeedDistance } from './claude-generated-fake-gen.js';
-import { Track, Position, HeartRateBpm, Lap } from '../types/garmin-zod.js';
-import { PolarLap } from '../types/polar-zod.js';
+import {
+    Track,
+    Position,
+    HeartRateBpm,
+    Lap,
+    Activities,
+} from '../types/garmin-zod.js';
+import { PolarActivity, PolarLap } from '../types/polar-zod.js';
+import { defaultGarminCreator } from './defaults.js';
 
 export function interpolateTime(index: number, totalPoints: number): string {
     const baseTime = new Date();
@@ -184,4 +191,15 @@ export function transformLap(laps: PolarLap | PolarLap[]): Lap[] {
             '@_StartTime': lap['@_StartTime'] || new Date().toISOString(),
         };
     });
+}
+
+export function transformActivities(activity: PolarActivity): Activities {
+    return {
+        Activity: {
+            '@_Sport': activity['@_Sport'],
+            Id: activity.Id,
+            Lap: transformLap(activity.Lap),
+            Creator: defaultGarminCreator,
+        },
+    };
 }
