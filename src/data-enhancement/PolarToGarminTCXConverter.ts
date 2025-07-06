@@ -1,9 +1,4 @@
-import {
-    XMLParser,
-    XMLBuilder,
-    X2jOptions,
-    XmlBuilderOptions,
-} from 'fast-xml-parser';
+import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { GarminTcxDocument } from '../types/garmin-zod.js';
 import { transformActivities } from './track-data-enhancer.js';
 import { PolarTcxDocument } from '../types/polar-zod.js';
