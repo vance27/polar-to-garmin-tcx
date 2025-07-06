@@ -5,7 +5,7 @@ import {
     TrainingCenterDatabase,
 } from '../types/garmin-zod.js';
 import { z } from 'zod';
-import { LatLonAlt, LatLonAltRad, SpeedDistanceConfig } from '../types/interface.js';
+import { LatLonAltRad, SpeedDistanceConfig } from '../types/interface.js';
 
 export const defaultSpeedDistanceConfig: SpeedDistanceConfig = {
     restingHR: 50,
