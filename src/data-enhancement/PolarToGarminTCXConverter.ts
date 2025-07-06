@@ -4,17 +4,9 @@ import {
     X2jOptions,
     XmlBuilderOptions,
 } from 'fast-xml-parser';
-import {
-    Activities,
-    Activity,
-    GarminTcxDocument,
-} from '../types/garmin-zod.js';
+import { Activities, GarminTcxDocument } from '../types/garmin-zod.js';
 import { transformLap } from './track-data-enhancer.js';
-import {
-    PolarActivities,
-    PolarActivity,
-    PolarTcxDocument,
-} from '../types/polar-zod.js';
+import { PolarActivities, PolarTcxDocument } from '../types/polar-zod.js';
 import { defaultGarminCreator, defaultGarminTcxDocument } from './defaults.js';
 
 export class PolarToGarminTCXConverter {

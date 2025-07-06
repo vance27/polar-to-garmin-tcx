@@ -3,7 +3,7 @@ import {
     Creator,
     GarminTcxDocument,
     TrainingCenterDatabase,
-} from '../types/garmin-zod';
+} from '../types/garmin-zod.js';
 import { z } from 'zod';
 
 export const defaultGarminCreator: Creator = {

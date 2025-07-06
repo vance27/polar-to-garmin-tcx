@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export type PolarXmlDeclaration = z.infer<typeof PolarXmlDeclaration>;
 export const PolarXmlDeclaration = z.object({
-    '@_version': z.string(),
+    '@_version': z.number(),
     '@_encoding': z.string(),
 });
 
@@ -12,11 +12,7 @@ export const PolarHeartRateBpm = z.object({
 });
 
 export type PolarExtensions = z.infer<typeof PolarExtensions>;
-export const PolarExtensions = z
-    .object({
-        // Extensions can be empty or contain various structures
-    })
-    .optional();
+export const PolarExtensions = z.string().optional();
 
 export type PolarPosition = z.infer<typeof PolarPosition>;
 export const PolarPosition = z.object({
@@ -64,13 +60,13 @@ export type PolarPlan = z.infer<typeof PolarPlan>;
 export const PolarPlan = z.object({
     Extensions: PolarExtensions,
     '@_Type': z.string(),
-    '@_IntervalWorkout': z.string(),
+    '@_IntervalWorkout': z.boolean(),
 });
 
 export type PolarTraining = z.infer<typeof PolarTraining>;
 export const PolarTraining = z.object({
     Plan: PolarPlan,
-    '@_VirtualPartner': z.string(),
+    '@_VirtualPartner': z.boolean(),
 });
 
 export type PolarCreator = z.infer<typeof PolarCreator>;
@@ -86,7 +82,7 @@ export const PolarCreator = z.object({
 export type PolarActivity = z.infer<typeof PolarActivity>;
 export const PolarActivity = z.object({
     Id: z.string(),
-    Lap: z.array(PolarLap),
+    Lap: z.union([PolarLap, PolarLap.array()]),
     Training: PolarTraining.optional(),
     Creator: PolarCreator,
     '@_Sport': z.string(),
