@@ -153,22 +153,24 @@ export function transformLaps(laps: any): Lap[] {
     );
 
     // Calculate lap statistics
-    const speeds = enhancedTrackData
-      .map((tp) => Number(tp.Extensions?.["ns3:TPX"]["ns3:Speed"]))
+    const speeds = enhancedTrackData.Trackpoint.map((tp) =>
+      Number(tp.Extensions?.["ns3:TPX"]["ns3:Speed"])
+    )
       .filter((s) => s !== undefined)
       .filter((s) => s > 0);
     const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
     const avgCadence =
-      enhancedTrackData.reduce((sum, tp) => sum + (tp.Cadence || 0), 0) /
-      enhancedTrackData.length;
+      enhancedTrackData.Trackpoint.reduce(
+        (sum, tp) => sum + (tp.Cadence || 0),
+        0
+      ) / enhancedTrackData.Trackpoint.length;
 
     return {
       DistanceMeters: targetLapDistance,
       Cadence: Math.round(avgCadence),
-      Track: {
-        Trackpoint: enhancedTrackData,
-      },
-      TotalTimeSeconds: lap.TotalTimeSeconds || enhancedTrackData.length,
+      Track: enhancedTrackData,
+      TotalTimeSeconds:
+        lap.TotalTimeSeconds || enhancedTrackData.Trackpoint.length, // Trackpoint length
       MaximumSpeed: maxSpeed,
       Calories: lap.Calories || Math.round(targetLapDistance * 0.05), // Rough calorie estimate
       AverageHeartRateBpm: lap.AverageHeartRateBpm || { Value: 0 },

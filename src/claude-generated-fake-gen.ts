@@ -1,4 +1,4 @@
-import { Lap, Trackpoint } from "./garmin-interface.js";
+import { Lap, Track, Trackpoint } from "./garmin-interface.js";
 
 interface SpeedDistanceConfig {
   restingHR: number;
@@ -30,14 +30,15 @@ function calculateSpeedFromHR(hr: number, config: SpeedDistanceConfig): number {
 
   return Math.max(0, baseSpeed * variability);
 }
-
 export function enhanceTrackDataWithSpeedDistance(
-  Trackpoints: Trackpoint[],
+  track: any,
   targetLapDistance: number
-): Trackpoint[] {
-  if (!Trackpoints || Trackpoints.length === 0) {
-    return [];
-  }
+): Track {
+  if (!track || !track.Trackpoint) return { Trackpoint: [] };
+
+  const trackpoints = Array.isArray(track.Trackpoint)
+    ? track.Trackpoint
+    : [track.Trackpoint];
 
   const config: SpeedDistanceConfig = {
     restingHR: 60,
@@ -49,7 +50,7 @@ export function enhanceTrackDataWithSpeedDistance(
   };
 
   // Calculate speeds for each Trackpoint
-  const enhancedPoints = Trackpoints.map((tp) => {
+  const enhancedPoints = trackpoints.map((tp) => {
     const hr = tp?.HeartRateBpm?.Value || 0;
     const speed = calculateSpeedFromHR(hr, config);
 
@@ -109,6 +110,84 @@ export function enhanceTrackDataWithSpeedDistance(
 
   return pointsWithDistance;
 }
+// export function enhanceTrackDataWithSpeedDistance(
+//   Trackpoints: Trackpoint[],
+//   targetLapDistance: number
+// ): Trackpoint[] {
+//   if (!Trackpoints || Trackpoints.length === 0) {
+//     return [];
+//   }
+
+//   const config: SpeedDistanceConfig = {
+//     restingHR: 60,
+//     maxHR: 196,
+//     floorHR: 100, // Below this, assume on sideline
+//     maxSpeed: 8.5, // ~19 mph max sprint speed
+//     minActiveSpeed: 1.5, // ~3.4 mph walking
+//     speedVariability: 0.3,
+//   };
+
+//   // Calculate speeds for each Trackpoint
+//   const enhancedPoints = Trackpoints.map((tp) => {
+//     const hr = tp?.HeartRateBpm?.Value || 0;
+//     const speed = calculateSpeedFromHR(hr, config);
+
+//     return {
+//       ...tp,
+//       Extensions: {
+//         "ns3:TPX": {
+//           "@_xmlns:ns3":
+//             "http://www.garmin.com/xmlschemas/ActivityExtension/v2",
+//           "ns3:Speed": String(speed), // Random speed variation // TODO should add the speed here
+//           // "ns3:Watts": Math.round(200 + Math.random() * 100), // Power data // TODO no power data with garmin forerunner 645 music
+//           "ns3:CadenceRPM": speed > 0 ? Math.round(75 + speed * 5) : 0, // Rough cadence estimation
+//         },
+//       },
+//     };
+//   });
+
+//   // Calculate time intervals and distances
+//   let cumulativeDistance = 0;
+//   const pointsWithDistance = enhancedPoints.map((tp, index) => {
+//     let distanceIncrement = 0;
+
+//     if (index > 0 && Number(tp.Extensions["ns3:TPX"]["ns3:Speed"]) > 0) {
+//       // Assume 1 second intervals if no time data available
+//       const timeInterval = 1; // seconds
+//       distanceIncrement =
+//         Number(tp.Extensions["ns3:TPX"]["ns3:Speed"]) * timeInterval;
+//     }
+
+//     cumulativeDistance += distanceIncrement;
+
+//     return {
+//       ...tp,
+//       DistanceMeters: cumulativeDistance,
+//     };
+//   });
+
+//   // Scale distances to match target lap distance
+//   const actualDistance = cumulativeDistance;
+//   if (actualDistance > 0 && targetLapDistance > 0) {
+//     const scaleFactor = targetLapDistance / actualDistance;
+
+//     return pointsWithDistance.map((tp) => ({
+//       ...tp,
+//       DistanceMeters: tp.DistanceMeters * scaleFactor,
+//       Extensions: {
+//         ...tp.Extensions,
+//         "ns3:TPX": {
+//           ...tp.Extensions["ns3:TPX"],
+//           "ns3:Speed": String(
+//             Number(tp.Extensions["ns3:TPX"]["ns3:Speed"]) * scaleFactor
+//           ), // Scale speed proportionally
+//         },
+//       },
+//     }));
+//   }
+
+//   return pointsWithDistance;
+// }
 
 // export function transformLaps(laps: any): Lap[] {
 //   if (!laps) {
