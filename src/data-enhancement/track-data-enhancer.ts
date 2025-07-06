@@ -1,5 +1,6 @@
 import { enhanceTrackDataWithSpeedDistance } from './claude-generated-fake-gen.js';
 import { Track, Position, HeartRateBpm, Lap } from '../types/garmin-zod.js';
+import { PolarLap } from '../types/polar-zod.js';
 
 export function interpolateTime(index: number, totalPoints: number): string {
     const baseTime = new Date();
@@ -125,7 +126,7 @@ function distributeDistanceAcrossLaps(
     );
 }
 
-export function transformLaps(laps: any): Lap[] {
+export function transformLaps(laps: PolarLap[]): Lap[] {
     if (!laps) {
         console.warn('No laps in input data', JSON.stringify(laps));
         return [];

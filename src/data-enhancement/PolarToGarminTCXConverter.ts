@@ -7,6 +7,7 @@ import {
 import { Activity, GarminTcxDocument } from '../types/garmin-zod.js';
 import { requireKey } from '../helpers.js';
 import { transformLaps } from './track-data-enhancer.js';
+import { PolarActivity, PolarTcxDocument } from '../types/polar-zod.js';
 
 export class PolarToGarminTCXConverter {
     private parserOptions: X2jOptions;
@@ -38,8 +39,8 @@ export class PolarToGarminTCXConverter {
             // Parse the Polar TCX file
             const parsed = this.parser.parse(polarTcxContent);
 
-            // Transform to Garmin structure
-            const tcxData = parsed.TrainingCenterDatabase || parsed;
+            // Parse the raw string in Polar schema
+            const polarData = PolarTcxDocument.parse(parsed);
 
             // Create Garmin-compatible structure
             const garminData: GarminTcxDocument = {
@@ -55,7 +56,7 @@ export class PolarToGarminTCXConverter {
                         'http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd',
                     Activities: {
                         Activity: this.transformActivity(
-                            tcxData.Activities?.Activity || tcxData.Activity
+                            polarData.TrainingCenterDatabase.Activities.Activity
                         ),
                     },
                     Author: {
@@ -89,7 +90,7 @@ export class PolarToGarminTCXConverter {
         return converter.convertPolarToGarmin(polarTcxContent);
     }
 
-    private transformActivity(activity: any): Activity {
+    private transformActivity(activity: PolarActivity): Activity {
         if (!activity) throw new Error('No activity in base document');
         if (Array.isArray(activity))
             throw new Error('Cannot process activity with multiple activities');
