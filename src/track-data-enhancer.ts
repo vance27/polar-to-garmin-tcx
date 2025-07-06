@@ -76,6 +76,7 @@ export function interpolateDistance(
 
 export function interpolateHeartRate(index: number): HeartRateBpm {
   // Create realistic heart rate variation
+  // TODO should allow a base HR config
   const baseHR = 140;
   const variation = 20 * Math.sin(index * 0.05) + (Math.random() - 0.5) * 10;
   const maxHr =
@@ -96,20 +97,43 @@ export function transformLaps(laps: any): Lap[] {
 
   const lapArray = Array.isArray(laps) ? laps : [laps];
 
-  return lapArray.map((lap, index) => ({
-    "@_StartTime": lap["@_StartTime"] || new Date().toISOString(),
-    TotalTimeSeconds: lap.TotalTimeSeconds || 0,
-    DistanceMeters:
-      lap.DistanceMeters && lap.DistanceMeters > 0
-        ? lap.DistanceMeters
-        : 9656.06,
-    MaximumSpeed: lap.MaximumSpeed || 0,
-    Calories: lap.Calories || 0,
-    AverageHeartRateBpm: lap.AverageHeartRateBpm || { Value: 0 },
-    MaximumHeartRateBpm: lap.MaximumHeartRateBpm || { Value: 0 },
-    Intensity: lap.Intensity || "Active",
-    Cadence: lap.Cadence || 0,
-    TriggerMethod: lap.TriggerMethod || "Manual",
-    Track: enhanceTrackData(lap.Track),
-  }));
+  /**
+   * Total distance would typically be broken up over all of the laps, might need to consider ALL laps
+   * TODO come up with an algorithm that takes hr and converts to speed to the best of its ability
+   * Gets value from process.env or sets distance equal to ~ 6 miles
+   */
+  const totalDistance = process.env.DISTANCE
+    ? Number(process.env.DISTANCE) * 1609.344 // TODO need to access this value safer
+    : 9656.06;
+
+  return lapArray.map((lap, index) => {
+    const trackData = enhanceTrackData(lap.Track);
+
+    // Should have an equation that looks at trackpoint hr data and total distance estimated and sets cadence and distance based on that
+    const config = {
+      lapAverageCadence: lap.cadence || 81, // Should maybe be calculated rather than derived
+      lapDistance:
+        lap.DistanceMeters && lap.DistanceMeters > 0
+          ? lap.DistanceMeters
+          : totalDistance,
+    };
+    return {
+      DistanceMeters: config.lapDistance,
+      Cadence: config.lapAverageCadence,
+      Track: trackData,
+      TotalTimeSeconds: lap.TotalTimeSeconds || 0,
+      MaximumSpeed: lap.MaximumSpeed || 0,
+      Calories: lap.Calories || 0,
+      AverageHeartRateBpm: lap.AverageHeartRateBpm || { Value: 0 },
+      MaximumHeartRateBpm: lap.MaximumHeartRateBpm || { Value: 0 },
+      Intensity: lap.Intensity || "Active",
+      TriggerMethod: lap.TriggerMethod || "Manual",
+      "@_StartTime": lap["@_StartTime"] || new Date().toISOString(),
+    };
+  });
 }
+
+/**
+ * TODO
+ * need an equation that adjusts the interpolate functions based on trackpoint hr and total distance covered
+ */
