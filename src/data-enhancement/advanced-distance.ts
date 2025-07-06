@@ -45,19 +45,21 @@ function calculateDistance(pos1: Position, pos2: Position): number {
 
 function getRandomSidelinePosition(): Position {
     const { lat, lon } = defaultLatLonAltRad;
-    const sidelineDistance = 25; // meters from center
+    const sidelineDistance = -30; // meters from center
 
     // Randomly choose left or right sideline
-    const isLeftSide = Math.random() < 0.5;
-    const sideMultiplier = isLeftSide ? -1 : 1;
+    // const isLeftSide = Math.random() < 0.5;
+    // const sideMultiplier = isLeftSide ? -1 : 1;
 
     // Add some random variation along the sideline
-    const alongSidelineVariation = (Math.random() - 0.5) * 20; // ±10 meters
+    const alongSidelineVariation = (Math.random() - 0.5) * 10; // ±10 meters
 
     return {
         LatitudeDegrees:
-            lat + metersToLatDegrees(sidelineDistance * sideMultiplier),
-        LongitudeDegrees: lon + metersToLonDegrees(alongSidelineVariation, lat),
+            // lat + metersToLatDegrees(sidelineDistance * sideMultiplier),
+            lat + metersToLatDegrees(alongSidelineVariation), // TODO always one side
+        // LongitudeDegrees: lon + metersToLonDegrees(alongSidelineVariation, lat),
+        LongitudeDegrees: lon + metersToLonDegrees(sidelineDistance, lat),
     };
 }
 

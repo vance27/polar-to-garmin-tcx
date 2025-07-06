@@ -75,8 +75,8 @@ export function calculateSpeedFromHR(
 ): number {
     // If HR is below floor, assume not running (sideline)
     if (hr < config.floorHR) {
-        // return 0;
-        return Math.random() * (0.06 - 0.01) + 0.01;
+        return 0;
+        // return Math.random() * (0.06 - 0.01) + 0.01;
     }
 
     // Calculate HR intensity as percentage between floor and max
