@@ -11,6 +11,7 @@ import {
     PolarActivity,
     PolarTrackpoint,
 } from '../types/polar-zod.js';
+import { enhanceTrackDataWithSpeedDistanceAdv } from './advanced-distance.js';
 import {
     defaultGarminCreator,
     defaultLatLonAltRad,
@@ -68,10 +69,14 @@ export function interpolateHeartRate(index: number): HeartRateBpm {
     };
 }
 
-function calculateSpeedFromHR(hr: number, config: SpeedDistanceConfig): number {
+export function calculateSpeedFromHR(
+    hr: number,
+    config: SpeedDistanceConfig
+): number {
     // If HR is below floor, assume not running (sideline)
     if (hr < config.floorHR) {
-        return 0;
+        // return 0;
+        return Math.random() * (0.06 - 0.01) + 0.01;
     }
 
     // Calculate HR intensity as percentage between floor and max
@@ -207,7 +212,7 @@ export function transformLap(laps: PolarLap | PolarLap[]): Lap[] {
         const targetLapDistance = lapDistances[index];
 
         // Enhance track data with realistic speed and distance
-        const enhancedTrackData = enhanceTrackDataWithSpeedDistance(
+        const enhancedTrackData = enhanceTrackDataWithSpeedDistanceAdv(
             trackPoints,
             targetLapDistance
         );
