@@ -1,25 +1,4 @@
-interface TrackPoint {
-  HeartRateBpm?: { Value: number };
-  Time?: string;
-  DistanceMeters?: number;
-  Speed?: number;
-  Cadence?: number;
-  [key: string]: any;
-}
-
-interface Lap {
-  DistanceMeters: number;
-  Cadence: number;
-  Track: TrackPoint[];
-  TotalTimeSeconds: number;
-  MaximumSpeed: number;
-  Calories: number;
-  AverageHeartRateBpm: { Value: number };
-  MaximumHeartRateBpm: { Value: number };
-  Intensity: string;
-  TriggerMethod: string;
-  "@_StartTime": string;
-}
+import { Lap, Trackpoint } from "./garmin-interface.js";
 
 interface SpeedDistanceConfig {
   restingHR: number;
@@ -52,65 +31,39 @@ function calculateSpeedFromHR(hr: number, config: SpeedDistanceConfig): number {
   return Math.max(0, baseSpeed * variability);
 }
 
-function distributeDistanceAcrossLaps(
-  laps: any[],
-  totalDistance: number
-): number[] {
-  // Calculate relative activity levels for each lap based on average HR
-  const lapActivityLevels = laps.map((lap) => {
-    const trackPoints = Array.isArray(lap.Track) ? lap.Track : [lap.Track];
-    const avgHR =
-      trackPoints.reduce((sum, tp) => {
-        const hr = tp?.HeartRateBpm?.Value || 0;
-        return sum + hr;
-      }, 0) / trackPoints.length;
-
-    // Higher HR = more distance allocation
-    return Math.max(0, avgHR - 60); // Assuming 60 as baseline resting HR
-  });
-
-  const totalActivity = lapActivityLevels.reduce(
-    (sum, level) => sum + level,
-    0
-  );
-
-  // If no activity detected, distribute evenly
-  if (totalActivity === 0) {
-    return laps.map(() => totalDistance / laps.length);
-  }
-
-  // Distribute distance proportionally based on activity
-  return lapActivityLevels.map(
-    (level) => (level / totalActivity) * totalDistance
-  );
-}
-
-function enhanceTrackDataWithSpeedDistance(
-  trackPoints: TrackPoint[],
+export function enhanceTrackDataWithSpeedDistance(
+  Trackpoints: Trackpoint[],
   targetLapDistance: number
-): TrackPoint[] {
-  if (!trackPoints || trackPoints.length === 0) {
+): Trackpoint[] {
+  if (!Trackpoints || Trackpoints.length === 0) {
     return [];
   }
 
   const config: SpeedDistanceConfig = {
     restingHR: 60,
-    maxHR: 190,
-    floorHR: 90, // Below this, assume on sideline
+    maxHR: 196,
+    floorHR: 100, // Below this, assume on sideline
     maxSpeed: 8.5, // ~19 mph max sprint speed
     minActiveSpeed: 1.5, // ~3.4 mph walking
     speedVariability: 0.3,
   };
 
-  // Calculate speeds for each trackpoint
-  const enhancedPoints = trackPoints.map((tp) => {
+  // Calculate speeds for each Trackpoint
+  const enhancedPoints = Trackpoints.map((tp) => {
     const hr = tp?.HeartRateBpm?.Value || 0;
     const speed = calculateSpeedFromHR(hr, config);
 
     return {
       ...tp,
-      Speed: speed,
-      Cadence: speed > 0 ? Math.round(75 + speed * 5) : 0, // Rough cadence estimation
+      Extensions: {
+        "ns3:TPX": {
+          "@_xmlns:ns3":
+            "http://www.garmin.com/xmlschemas/ActivityExtension/v2",
+          "ns3:Speed": String(speed), // Random speed variation // TODO should add the speed here
+          // "ns3:Watts": Math.round(200 + Math.random() * 100), // Power data // TODO no power data with garmin forerunner 645 music
+          "ns3:CadenceRPM": speed > 0 ? Math.round(75 + speed * 5) : 0, // Rough cadence estimation
+        },
+      },
     };
   });
 
@@ -119,10 +72,11 @@ function enhanceTrackDataWithSpeedDistance(
   const pointsWithDistance = enhancedPoints.map((tp, index) => {
     let distanceIncrement = 0;
 
-    if (index > 0 && tp.Speed > 0) {
+    if (index > 0 && Number(tp.Extensions["ns3:TPX"]["ns3:Speed"]) > 0) {
       // Assume 1 second intervals if no time data available
       const timeInterval = 1; // seconds
-      distanceIncrement = tp.Speed * timeInterval;
+      distanceIncrement =
+        Number(tp.Extensions["ns3:TPX"]["ns3:Speed"]) * timeInterval;
     }
 
     cumulativeDistance += distanceIncrement;
@@ -141,61 +95,69 @@ function enhanceTrackDataWithSpeedDistance(
     return pointsWithDistance.map((tp) => ({
       ...tp,
       DistanceMeters: tp.DistanceMeters * scaleFactor,
-      Speed: tp.Speed * scaleFactor, // Scale speed proportionally
+      Extensions: {
+        ...tp.Extensions,
+        "ns3:TPX": {
+          ...tp.Extensions["ns3:TPX"],
+          "ns3:Speed": String(
+            Number(tp.Extensions["ns3:TPX"]["ns3:Speed"]) * scaleFactor
+          ), // Scale speed proportionally
+        },
+      },
     }));
   }
 
   return pointsWithDistance;
 }
 
-export function transformLaps(laps: any): Lap[] {
-  if (!laps) {
-    console.warn("No laps in input data", JSON.stringify(laps));
-    return [];
-  }
+// export function transformLaps(laps: any): Lap[] {
+//   if (!laps) {
+//     console.warn("No laps in input data", JSON.stringify(laps));
+//     return [];
+//   }
 
-  const lapArray = Array.isArray(laps) ? laps : [laps];
+//   const lapArray = Array.isArray(laps) ? laps : [laps];
 
-  // Get total distance from environment or default to ~6 miles
-  const totalDistance = process.env.DISTANCE
-    ? Number(process.env.DISTANCE) * 1609.344
-    : 9656.06;
+//   // Get total distance from environment or default to ~6 miles
+//   const totalDistance = process.env.DISTANCE
+//     ? Number(process.env.DISTANCE) * 1609.344
+//     : 9656.06;
 
-  // Distribute total distance across laps based on activity level
-  const lapDistances = distributeDistanceAcrossLaps(lapArray, totalDistance);
+//   // Distribute total distance across laps based on activity level
+//   const lapDistances = 0; // TODO adjusted
 
-  return lapArray.map((lap, index) => {
-    const trackPoints = Array.isArray(lap.Track) ? lap.Track : [lap.Track];
-    const targetLapDistance = lapDistances[index];
+//   return lapArray.map((lap, index) => {
+//     const Trackpoints = Array.isArray(lap.Track) ? lap.Track : [lap.Track];
+//     const targetLapDistance = lapDistances[index];
 
-    // Enhance track data with realistic speed and distance
-    const enhancedTrackData = enhanceTrackDataWithSpeedDistance(
-      trackPoints,
-      targetLapDistance
-    );
+//     // Enhance track data with realistic speed and distance
+//     const enhancedTrackData = enhanceTrackDataWithSpeedDistance(
+//       Trackpoints,
+//       targetLapDistance
+//     );
 
-    // Calculate lap statistics
-    const speeds = enhancedTrackData
-      .map((tp) => tp.Speed)
-      .filter((s) => s !== undefined)
-      .filter((s) => s > 0);
-    const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
-    const avgCadence =
-      enhancedTrackData.reduce((sum, tp) => sum + (tp.Cadence || 0), 0) /
-      enhancedTrackData.length;
+//     // Calculate lap statistics
+//     const speeds = enhancedTrackData
+//       .map((tp) => Number(tp.Extensions?.["ns3:TPX"]["ns3:Speed"])) // TODO need to make sure I'm not converting undefined shit to a number
+//       .filter((s) => s !== undefined)
+//       .filter((s) => s > 0);
+//     const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
+//     const avgCadence =
+//       enhancedTrackData.reduce((sum, tp) => sum + (tp.Cadence || 0), 0) /
+//       enhancedTrackData.length;
 
-    return {
-      DistanceMeters: targetLapDistance,
-      Cadence: Math.round(avgCadence),
-      Track: enhancedTrackData,
-      TotalTimeSeconds: lap.TotalTimeSeconds || enhancedTrackData.length,
-      MaximumSpeed: maxSpeed,
-      Calories: lap.Calories || Math.round(targetLapDistance * 0.05), // Rough calorie estimate
-      AverageHeartRateBpm: lap.AverageHeartRateBpm || { Value: 0 },
-      MaximumHeartRateBpm: lap.MaximumHeartRateBpm || { Value: 0 },
-      Intensity: lap.Intensity || "Active",
-      TriggerMethod: lap.TriggerMethod || "Manual",
-      "@_StartTime": lap["@_StartTime"] || new Date().toISOString(),
-    };
-  });
-}
+//     return {
+//       DistanceMeters: targetLapDistance,
+//       Cadence: Math.round(avgCadence),
+//       Track: enhanceTrackDataWithSpeedDistance,
+//       TotalTimeSeconds: lap.TotalTimeSeconds || enhancedTrackData.length,
+//       MaximumSpeed: maxSpeed,
+//       Calories: lap.Calories || Math.round(targetLapDistance * 0.05), // Rough calorie estimate
+//       AverageHeartRateBpm: lap.AverageHeartRateBpm || { Value: 0 },
+//       MaximumHeartRateBpm: lap.MaximumHeartRateBpm || { Value: 0 },
+//       Intensity: lap.Intensity || "Active",
+//       TriggerMethod: lap.TriggerMethod || "Manual",
+//       "@_StartTime": lap["@_StartTime"] || new Date().toISOString(),
+//     };
+//   });
+// }

@@ -102,11 +102,11 @@ export class PolarToGarminTCXConverter {
     if (Array.isArray(activity))
       throw new Error("Cannot process activity with multiple activities");
 
-    requireKey(activity, "id");
+    requireKey(activity, "Id"); //TODO disabled??
 
     return {
       "@_Sport": activity["@_Sport"] || "Running",
-      Id: activity.id,
+      Id: activity.Id,
       Lap: transformLaps(activity.Lap),
       Creator: {
         "@_xsi:type": "Device_t",
