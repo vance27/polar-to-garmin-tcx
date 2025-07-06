@@ -84,6 +84,27 @@ function generateRandomTarget(): Position {
     };
 }
 
+function generateRandomTargetRecatangle(): Position {
+    const { lat, lon, radius } = defaultLatLonAltRad;
+
+    // Define rectangular bounds (you can adjust these values)
+    const rectangleWidth = radius * 1.5; // meters (east-west)
+    const rectangleHeight = radius * 1.2; // meters (north-south)
+
+    // Generate random position within the rectangle
+    // Random offset from center, ranging from -width/2 to +width/2
+    const randomEastWest = (Math.random() - 0.5) * rectangleWidth;
+    const randomNorthSouth = (Math.random() - 0.5) * rectangleHeight;
+
+    const targetLat = lat + metersToLatDegrees(randomNorthSouth);
+    const targetLon = lon + metersToLonDegrees(randomEastWest, lat);
+
+    return {
+        LatitudeDegrees: targetLat,
+        LongitudeDegrees: targetLon,
+    };
+}
+
 // Add natural jitter to movement direction
 function addJitterToDirection(
     direction: { lat: number; lon: number },
@@ -121,8 +142,6 @@ function generateMovementDirection(
     maxRadius: number,
     momentum: { lat: number; lon: number }
 ): { lat: number; lon: number } {
-    const { lat, lon } = defaultLatLonAltRad;
-
     // Calculate direction towards dynamic target instead of always center
     const towardsTargetLat =
         targetPos.LatitudeDegrees - currentPos.LatitudeDegrees;
@@ -209,7 +228,7 @@ export function interpolatePosition(
             movementDirection: { lat: 0, lon: 1 },
             stationaryTime: 0,
             // Initialize new properties
-            dynamicTarget: generateRandomTarget(),
+            dynamicTarget: generateRandomTargetRecatangle(),
             targetChangeCounter: 0,
             momentum: { lat: 0, lon: 0 },
             lastMovementDirection: { lat: 0, lon: 1 },
@@ -220,7 +239,7 @@ export function interpolatePosition(
     globalPositionState.targetChangeCounter++;
     if (globalPositionState.targetChangeCounter > 8 + Math.random() * 12) {
         // Change target every 8-20 seconds
-        globalPositionState.dynamicTarget = generateRandomTarget();
+        globalPositionState.dynamicTarget = generateRandomTargetRecatangle();
         globalPositionState.targetChangeCounter = 0;
     }
 
@@ -265,7 +284,7 @@ export function interpolatePosition(
         globalPositionState.isOnSideline = false;
         globalPositionState.sidelinePosition = null;
         // Generate new target when returning to field
-        globalPositionState.dynamicTarget = generateRandomTarget();
+        globalPositionState.dynamicTarget = generateRandomTargetRecatangle();
     }
 
     // Normal field movement
@@ -274,25 +293,17 @@ export function interpolatePosition(
             globalPositionState.currentPosition,
             centerPosition
         );
-        // console.log(
-        //     'normal field movement',
-        //     globalPositionState.currentPosition,
-        //     globalPositionState.dynamicTarget
-        // );
 
         // Check if we're close to the current target, if so generate a new one
         const distanceToTarget = calculateDistance(
             globalPositionState.currentPosition,
             globalPositionState.dynamicTarget
         );
-        console.log(distanceToTarget);
 
-        // TODO its ALWAYS less than 15
         if (distanceToTarget < 15) {
             // Within 15 meters of target
-            globalPositionState.dynamicTarget = generateRandomTarget();
-        } else {
-            console.log(distanceToTarget);
+            globalPositionState.dynamicTarget =
+                generateRandomTargetRecatangle();
         }
 
         // Generate movement direction towards dynamic target
@@ -355,7 +366,8 @@ export function interpolatePosition(
                 lon + (newPosition.LongitudeDegrees - lon) * scaleFactor;
 
             // Generate new target when hitting boundary
-            globalPositionState.dynamicTarget = generateRandomTarget();
+            globalPositionState.dynamicTarget =
+                generateRandomTargetRecatangle();
         }
 
         globalPositionState.currentPosition = newPosition;
@@ -403,24 +415,20 @@ export function enhanceTrackDataWithSpeedDistanceAdv(
         // Get previous position for continuity
         const previousPosition =
             index > 0 ? enhancedPointsPosition[index - 1].Position : undefined;
+
+        const interpolatedPosition = interpolatePosition(
+            index,
+            trackpoints.length,
+            speed,
+            previousPosition
+        );
+        // TODO need to have a record of the last position
         enhancedPointsPosition.push({
-            Position: interpolatePosition(
-                index,
-                trackpoints.length,
-                speed,
-                previousPosition
-            ),
+            Position: interpolatedPosition,
         });
         return {
             ...tp,
-            Position:
-                tp.Position ||
-                interpolatePosition(
-                    index,
-                    trackpoints.length,
-                    speed,
-                    previousPosition
-                ),
+            Position: tp.Position || interpolatedPosition,
             AltitudeMeters: tp.AltitudeMeters || interpolateAltitude(index),
             DistanceMeters: cumulativeDistance,
             Extensions: {
