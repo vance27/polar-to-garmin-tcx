@@ -11,7 +11,11 @@ import {
     PolarActivity,
     PolarTrackpoint,
 } from '../types/polar-zod.js';
-import { defaultGarminCreator } from './defaults.js';
+import {
+    defaultGarminCreator,
+    defaultLatLonAltRad,
+    defaultSpeedDistanceConfig,
+} from './defaults.js';
 
 export function interpolateTime(index: number, totalPoints: number): string {
     const baseTime = new Date();
@@ -25,29 +29,19 @@ export function interpolatePosition(
     index: number,
     totalPoints: number
 ): Position {
-    // Create a simple circular path for demonstration
-    // TODO setup coordinates selector
-    const centerLat = 44.970814; // Example latitude
-    const centerLon = -93.292994; // Example longitude
-    const radius = 0.00035; // Small radius for realistic GPS variation
-
-    // 44.970814, -93.292994 Parade stadium
-
+    const { lat, lon, radius } = defaultLatLonAltRad;
     const angle = (index / totalPoints) * 2 * Math.PI;
 
     return {
-        LatitudeDegrees: centerLat + radius * Math.sin(angle),
-        LongitudeDegrees: centerLon + radius * Math.cos(angle),
+        LatitudeDegrees: lat + radius * Math.sin(angle),
+        LongitudeDegrees: lon + radius * Math.cos(angle),
     };
 }
 
-// TODO need to reduce the traveled altitude - currently too high
 export function interpolateAltitude(index: number): number {
     // Create gentle elevation changes
-    // 252m is parade stadium elevation - soccer fields should be relatively flastt
-    const baseAltitude = 252; // TODO base altitude should come from config data - maybe an api call to google for coordinates?
     const variation = 0.1 * Math.sin(index * 0.1);
-    return baseAltitude + variation;
+    return defaultLatLonAltRad.altitude + variation;
 }
 
 export function interpolateDistance(
@@ -132,27 +126,17 @@ function distributeDistanceAcrossLaps(
     );
 }
 
+// Calculate speeds for each Trackpoint
+// Calculate time intervals and distances
 export function enhanceTrackDataWithSpeedDistance(
     trackpoints: PolarTrackpoint[],
     targetLapDistance: number
 ): Trackpoint[] {
-    const config: SpeedDistanceConfig = {
-        // TODO move to defaults
-        restingHR: 60,
-        maxHR: 196,
-        floorHR: 100, // Below this, assume on sideline
-        maxSpeed: 8.5, // ~19 mph max sprint speed
-        minActiveSpeed: 1.5, // ~3.4 mph walking
-        speedVariability: 0.3,
-    };
-
-    // Calculate speeds for each Trackpoint
-    // Calculate time intervals and distances
     let cumulativeDistance = 0;
 
     const enhancedPoints = trackpoints.map((tp, index) => {
         const hr = tp?.HeartRateBpm?.Value || 0;
-        const speed = calculateSpeedFromHR(hr, config);
+        const speed = calculateSpeedFromHR(hr, defaultSpeedDistanceConfig);
         // Assume 1 second intervals if no time data available
         const timeInterval = 1; // seconds // TODO see if timeinterval comes from data rather than defaulting
         const distanceIncrement =
@@ -163,8 +147,8 @@ export function enhanceTrackDataWithSpeedDistance(
         return {
             ...tp,
             // TODO added position
-            Position:
-                tp.Position || interpolatePosition(index, trackpoints.length), // TODO position needs to based on distance relative to the last point rather than random.
+            // Position:
+            //     tp.Position || interpolatePosition(index, trackpoints.length), // TODO position needs to based on distance relative to the last point rather than random.
             AltitudeMeters: tp.AltitudeMeters || interpolateAltitude(index), // TODO added altitude
             // HeartRateBpm: tp.HeartRateBpm || interpolateHeartRate(index), // TODO shouldn't need
             // Time: tp.Time || interpolateTime(index, trackpoints.length), // TODO shouldn't need

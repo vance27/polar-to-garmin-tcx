@@ -5,6 +5,23 @@ import {
     TrainingCenterDatabase,
 } from '../types/garmin-zod.js';
 import { z } from 'zod';
+import { LatLonAltRad, SpeedDistanceConfig } from '../types/interface.js';
+
+export const defaultSpeedDistanceConfig: SpeedDistanceConfig = {
+    restingHR: 50,
+    maxHR: 196,
+    floorHR: 130, // Below this, assume on sideline
+    maxSpeed: 8.5, // ~19 mph max sprint speed
+    minActiveSpeed: 1.5, // ~3.4 mph walking
+    speedVariability: 0.3,
+};
+
+export const defaultLatLonAltRad: LatLonAltRad = {
+    lat: 44.970814,
+    lon: -93.292994,
+    altitude: 252,
+    radius: 0.00035,
+};
 
 export const defaultGarminCreator: Creator = {
     '@_xsi:type': 'Device_t',
