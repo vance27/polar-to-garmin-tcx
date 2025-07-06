@@ -10,28 +10,22 @@ import { PolarTcxDocument } from '../types/polar-zod.js';
 import { defaultGarminTcxDocument } from './defaults.js';
 
 export class PolarToGarminTCXConverter {
-    private parserOptions: X2jOptions;
-    private builderOptions: XmlBuilderOptions;
     private parser: XMLParser;
     private builder: XMLBuilder;
 
     constructor() {
-        this.parserOptions = {
+        this.parser = new XMLParser({
             ignoreAttributes: false,
             attributeNamePrefix: '@_',
             parseAttributeValue: true,
             trimValues: true,
-        };
-
-        this.builderOptions = {
+        });
+        this.builder = new XMLBuilder({
             ignoreAttributes: false,
             attributeNamePrefix: '@_',
             format: true,
             suppressEmptyNode: true,
-        };
-
-        this.parser = new XMLParser(this.parserOptions);
-        this.builder = new XMLBuilder(this.builderOptions);
+        });
     }
 
     public convertPolarToGarmin(polarTcxContent: string): string {
@@ -42,14 +36,16 @@ export class PolarToGarminTCXConverter {
             // Parse the raw string in Polar schema
             const polarData = PolarTcxDocument.parse(parsed);
 
+            // Transform the activities (add fake data based on heart rate)
+            const activities = transformActivities(
+                polarData.TrainingCenterDatabase.Activities.Activity
+            );
             // Create Garmin-compatible structure
             const garminData: GarminTcxDocument = {
                 ...defaultGarminTcxDocument,
                 TrainingCenterDatabase: {
                     ...defaultGarminTcxDocument.TrainingCenterDatabase,
-                    Activities: transformActivities(
-                        polarData.TrainingCenterDatabase.Activities.Activity
-                    ),
+                    Activities: activities,
                 },
             };
 
