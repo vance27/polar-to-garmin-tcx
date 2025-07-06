@@ -18,9 +18,8 @@ const processViaClaude = async () => {
     const inputPath = path.resolve(`tcx-files/${process.env.INPUT_TCX}`);
     const outputPath = path.resolve(`tcx-files/${process.env.OUTPUT_TCX}`);
 
-    const converter = new PolarToGarminTCXConverter();
     const polarData = await fs.readFile(inputPath, "utf8");
-    const garminData = converter.convertPolarToGarmin(polarData);
+    const garminData = PolarToGarminTCXConverter.convertFile(polarData);
     await fs.writeFile(outputPath, garminData);
     console.log(`✅ Processed TCX written to ${outputPath}`);
   } catch (err) {

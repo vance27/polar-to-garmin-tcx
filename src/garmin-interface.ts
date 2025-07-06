@@ -53,6 +53,8 @@ interface Lap {
 interface Version {
   VersionMajor: number;
   VersionMinor: number;
+  BuildMajor: number;
+  BuildMinor: number;
 }
 
 interface Plan {
@@ -71,14 +73,14 @@ interface Creator {
   UnitId: number;
   ProductID: number;
   Version: Version;
-  "@_xmlns:xsi": string;
+  "@_xmlns:xsi"?: string;
   "@_xsi:type": string;
 }
 
 interface Activity {
   Id: string;
   Lap: Lap[];
-  Training: Training;
+  Training?: Training;
   Creator: Creator;
   "@_Sport": string;
 }
@@ -92,8 +94,8 @@ interface Author {
   Build: Build;
   LangID: string;
   PartNumber: string;
-  "@_xmlns:xsi": string;
   "@_xsi:type": string;
+  "@_xmlns:xsi"?: string;
 }
 
 interface TrainingCenterDatabase {
