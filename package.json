@@ -13,7 +13,8 @@
     "dependencies": {
         "@types/node": "^24.0.10",
         "dotenv": "^17.0.1",
-        "fast-xml-parser": "^5.2.5"
+        "fast-xml-parser": "^5.2.5",
+        "zod": "^3.25.74"
     },
     "devDependencies": {
         "prettier": "^3.6.2",

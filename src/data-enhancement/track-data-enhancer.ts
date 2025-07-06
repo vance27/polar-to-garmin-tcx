@@ -1,5 +1,5 @@
 import { enhanceTrackDataWithSpeedDistance } from './claude-generated-fake-gen.js';
-import { Track, Position, HeartRateBpm, Lap } from './garmin-interface.js';
+import { Track, Position, HeartRateBpm, Lap } from '../types/garmin-zod.js';
 
 export function interpolateTime(index: number, totalPoints: number): string {
     const baseTime = new Date();

@@ -1,4 +1,4 @@
-import { Lap, Track, Trackpoint } from './garmin-interface.js';
+import { Lap, Track, Trackpoint } from '../types/garmin-zod.js';
 
 interface SpeedDistanceConfig {
     restingHR: number;

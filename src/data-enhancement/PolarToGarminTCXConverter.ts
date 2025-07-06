@@ -4,17 +4,9 @@ import {
     X2jOptions,
     XmlBuilderOptions,
 } from 'fast-xml-parser';
-import {
-    Activity,
-    GarminTcxDocument,
-    HeartRateBpm,
-    Lap,
-    Position,
-    Track,
-    Trackpoint,
-} from './garmin-interface.js';
-import { requireKey } from './helpers.js';
-import { enhanceTrackData, transformLaps } from './track-data-enhancer.js';
+import { Activity, GarminTcxDocument } from '../types/garmin-zod.js';
+import { requireKey } from '../helpers.js';
+import { transformLaps } from './track-data-enhancer.js';
 
 export class PolarToGarminTCXConverter {
     private parserOptions: X2jOptions;

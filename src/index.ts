@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { config } from 'dotenv';
 
-import { PolarToGarminTCXConverter } from './claude-generated.js';
+import { PolarToGarminTCXConverter } from './data-enhancement/PolarToGarminTCXConverter.js';
 
 config({ path: '.env' });
 config({ path: '.env.local', override: true });
