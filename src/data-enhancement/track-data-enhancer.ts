@@ -126,7 +126,7 @@ function distributeDistanceAcrossLaps(
     );
 }
 
-export function transformLaps(laps: PolarLap[]): Lap[] {
+export function transformLap(laps: PolarLap[]): Lap[] {
     if (!laps) {
         console.warn('No laps in input data', JSON.stringify(laps));
         return [];

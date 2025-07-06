@@ -4,10 +4,18 @@ import {
     X2jOptions,
     XmlBuilderOptions,
 } from 'fast-xml-parser';
-import { Activity, GarminTcxDocument } from '../types/garmin-zod.js';
-import { requireKey } from '../helpers.js';
-import { transformLaps } from './track-data-enhancer.js';
-import { PolarActivity, PolarTcxDocument } from '../types/polar-zod.js';
+import {
+    Activities,
+    Activity,
+    GarminTcxDocument,
+} from '../types/garmin-zod.js';
+import { transformLap } from './track-data-enhancer.js';
+import {
+    PolarActivities,
+    PolarActivity,
+    PolarTcxDocument,
+} from '../types/polar-zod.js';
+import { defaultGarminCreator, defaultGarminTcxDocument } from './defaults.js';
 
 export class PolarToGarminTCXConverter {
     private parserOptions: X2jOptions;
@@ -42,37 +50,16 @@ export class PolarToGarminTCXConverter {
             // Parse the raw string in Polar schema
             const polarData = PolarTcxDocument.parse(parsed);
 
+            const activities = this.transformActivity(
+                polarData.TrainingCenterDatabase.Activities
+            );
+
             // Create Garmin-compatible structure
             const garminData: GarminTcxDocument = {
-                '?xml': {
-                    '@_version': '1.0',
-                    '@_encoding': 'UTF-8',
-                },
+                ...defaultGarminTcxDocument,
                 TrainingCenterDatabase: {
-                    '@_xmlns':
-                        'http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2',
-                    '@_xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-                    '@_xsi:schemaLocation':
-                        'http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2 http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd',
-                    Activities: {
-                        Activity: this.transformActivity(
-                            polarData.TrainingCenterDatabase.Activities.Activity
-                        ),
-                    },
-                    Author: {
-                        '@_xsi:type': 'Application_t',
-                        Name: 'Connect Api',
-                        Build: {
-                            Version: {
-                                VersionMajor: 25,
-                                VersionMinor: 13,
-                                BuildMajor: 0,
-                                BuildMinor: 0,
-                            },
-                        },
-                        LangID: 'en',
-                        PartNumber: '006-D2449-00',
-                    },
+                    ...defaultGarminTcxDocument.TrainingCenterDatabase,
+                    Activities: activities,
                 },
             };
 
@@ -90,28 +77,17 @@ export class PolarToGarminTCXConverter {
         return converter.convertPolarToGarmin(polarTcxContent);
     }
 
-    private transformActivity(activity: PolarActivity): Activity {
-        if (!activity) throw new Error('No activity in base document');
-        if (Array.isArray(activity))
-            throw new Error('Cannot process activity with multiple activities');
+    private transformActivity(activities: PolarActivities): Activities {
+        const activity = activities.Activity;
 
-        requireKey(activity, 'Id'); //TODO disabled??
+        const transformedLap = transformLap(activity.Lap);
 
         return {
-            '@_Sport': activity['@_Sport'] || 'Running',
-            Id: activity.Id,
-            Lap: transformLaps(activity.Lap),
-            Creator: {
-                '@_xsi:type': 'Device_t',
-                Name: 'Forerunner 645 Music',
-                UnitId: 3966577896,
-                ProductID: 2888,
-                Version: {
-                    VersionMajor: 7,
-                    VersionMinor: 20,
-                    BuildMajor: 0,
-                    BuildMinor: 0,
-                },
+            Activity: {
+                '@_Sport': activity['@_Sport'] || 'Running',
+                Id: activity.Id,
+                Lap: transformedLap,
+                Creator: defaultGarminCreator,
             },
         };
     }

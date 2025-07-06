@@ -99,6 +99,11 @@ export const Activity = z.object({
     '@_Sport': z.string(),
 });
 
+export type Activities = z.infer<typeof Activities>;
+export const Activities = z.object({
+    Activity: Activity,
+})
+
 export type Build = z.infer<typeof Build>;
 export const Build = z.object({
     Version: Version,
@@ -116,9 +121,7 @@ export const Author = z.object({
 
 export type TrainingCenterDatabase = z.infer<typeof TrainingCenterDatabase>;
 export const TrainingCenterDatabase = z.object({
-    Activities: z.object({
-        Activity: Activity,
-    }),
+    Activities: Activities,
     Author: Author,
     '@_xmlns': z.string(),
     '@_xmlns:xsi': z.string(),
