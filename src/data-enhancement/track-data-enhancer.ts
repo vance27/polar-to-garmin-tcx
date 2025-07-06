@@ -11,7 +11,7 @@ import {
     PolarActivity,
     PolarTrackpoint,
 } from '../types/polar-zod.js';
-import { enhanceTrackDataWithSpeedDistanceAdv } from './advanced-distance copy.js';
+import { enhanceTrackDataWithSpeedDistanceAdv } from './advanced-distance-rectangle.js';
 import {
     defaultGarminCreator,
     defaultLatLonAltRad,
