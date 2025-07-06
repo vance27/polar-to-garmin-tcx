@@ -57,6 +57,7 @@ export function interpolateHeartRate(index: number): HeartRateBpm {
         Value: Math.max(60, Math.min(maxHr, Math.round(baseHR + variation))),
     };
 }
+
 export function enhanceTrackData(track: any): Track {
     if (!track || !track.Trackpoint) return { Trackpoint: [] };
 

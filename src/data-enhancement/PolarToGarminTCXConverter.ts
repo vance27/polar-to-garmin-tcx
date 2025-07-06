@@ -115,6 +115,3 @@ export class PolarToGarminTCXConverter {
         };
     }
 }
-
-// Default export for easier importing
-export default PolarToGarminTCXConverter;
