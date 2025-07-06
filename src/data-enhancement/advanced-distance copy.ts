@@ -28,8 +28,11 @@ function metersToLonDegrees(meters: number, latitude: number): number {
     return meters / (111000 * Math.cos((latitude * Math.PI) / 180));
 }
 
+// Haversine formula
 function calculateDistance(pos1: Position, pos2: Position): number {
-    const R = 6371000; // Earth's radius in meters
+    const R = 6378000; // Earth's radius in meters
+
+    // Convert degrees to radians
     const lat1Rad = (pos1.LatitudeDegrees * Math.PI) / 180;
     const lat2Rad = (pos2.LatitudeDegrees * Math.PI) / 180;
     const deltaLat =
@@ -62,21 +65,19 @@ function getRandomSidelinePosition(): Position {
 }
 
 // Generate a random target position within the field
-function generateRandomTarget(
-    centerPos: Position,
-    maxRadius: number
-): Position {
-    const { lat, lon } = defaultLatLonAltRad;
+function generateRandomTarget(): Position {
+    const { lat, lon, radius } = defaultLatLonAltRad;
 
     // Generate a random position within 60-90% of the field radius for more natural movement
-    const targetRadius = (0.6 + Math.random() * 0.3) * maxRadius;
+    // const targetRadius = 2 * radius; // TODO verify 60-90 is good enough
+    // const customRadiusInMeters = 40;
+    const targetRadius = (0.6 + Math.random() * 0.3) * radius; // TODO verify 60-90 is good enough
     const randomAngle = Math.random() * 2 * Math.PI;
 
     const targetLat =
         lat + metersToLatDegrees(targetRadius * Math.sin(randomAngle));
     const targetLon =
         lon + metersToLonDegrees(targetRadius * Math.cos(randomAngle), lat);
-
     return {
         LatitudeDegrees: targetLat,
         LongitudeDegrees: targetLon,
@@ -208,7 +209,7 @@ export function interpolatePosition(
             movementDirection: { lat: 0, lon: 1 },
             stationaryTime: 0,
             // Initialize new properties
-            dynamicTarget: generateRandomTarget(centerPosition, radius),
+            dynamicTarget: generateRandomTarget(),
             targetChangeCounter: 0,
             momentum: { lat: 0, lon: 0 },
             lastMovementDirection: { lat: 0, lon: 1 },
@@ -219,10 +220,7 @@ export function interpolatePosition(
     globalPositionState.targetChangeCounter++;
     if (globalPositionState.targetChangeCounter > 8 + Math.random() * 12) {
         // Change target every 8-20 seconds
-        globalPositionState.dynamicTarget = generateRandomTarget(
-            centerPosition,
-            radius
-        );
+        globalPositionState.dynamicTarget = generateRandomTarget();
         globalPositionState.targetChangeCounter = 0;
     }
 
@@ -267,10 +265,7 @@ export function interpolatePosition(
         globalPositionState.isOnSideline = false;
         globalPositionState.sidelinePosition = null;
         // Generate new target when returning to field
-        globalPositionState.dynamicTarget = generateRandomTarget(
-            centerPosition,
-            radius
-        );
+        globalPositionState.dynamicTarget = generateRandomTarget();
     }
 
     // Normal field movement
@@ -279,19 +274,25 @@ export function interpolatePosition(
             globalPositionState.currentPosition,
             centerPosition
         );
+        // console.log(
+        //     'normal field movement',
+        //     globalPositionState.currentPosition,
+        //     globalPositionState.dynamicTarget
+        // );
 
         // Check if we're close to the current target, if so generate a new one
         const distanceToTarget = calculateDistance(
             globalPositionState.currentPosition,
             globalPositionState.dynamicTarget
         );
+        console.log(distanceToTarget);
 
+        // TODO its ALWAYS less than 15
         if (distanceToTarget < 15) {
             // Within 15 meters of target
-            globalPositionState.dynamicTarget = generateRandomTarget(
-                centerPosition,
-                radius
-            );
+            globalPositionState.dynamicTarget = generateRandomTarget();
+        } else {
+            console.log(distanceToTarget);
         }
 
         // Generate movement direction towards dynamic target
@@ -354,10 +355,7 @@ export function interpolatePosition(
                 lon + (newPosition.LongitudeDegrees - lon) * scaleFactor;
 
             // Generate new target when hitting boundary
-            globalPositionState.dynamicTarget = generateRandomTarget(
-                centerPosition,
-                radius
-            );
+            globalPositionState.dynamicTarget = generateRandomTarget();
         }
 
         globalPositionState.currentPosition = newPosition;

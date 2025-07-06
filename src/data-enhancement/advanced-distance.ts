@@ -65,7 +65,6 @@ function getRandomSidelinePosition(): Position {
 
 function generateMovementDirection(
     currentPos: Position,
-    centerPos: Position,
     distanceFromCenter: number,
     maxRadius: number
 ): { lat: number; lon: number } {
@@ -80,6 +79,7 @@ function generateMovementDirection(
         towardsCenterLat * towardsCenterLat +
             towardsCenterLon * towardsCenterLon
     );
+
     const normalizedTowardsCenter =
         magnitude > 0
             ? {
@@ -87,10 +87,8 @@ function generateMovementDirection(
                   lon: towardsCenterLon / magnitude,
               }
             : { lat: 0, lon: 0 };
-
     // Calculate bias towards center based on distance from center
     const centerBias = Math.pow(distanceFromCenter / maxRadius, 2); // Exponential bias near edges
-
     // Generate random direction
     const randomAngle = Math.random() * 2 * Math.PI;
     const randomDirection = {
@@ -252,7 +250,6 @@ export function interpolatePosition(
         // Start moving towards center
         globalPositionState.movementDirection = generateMovementDirection(
             globalPositionState.currentPosition,
-            centerPosition,
             calculateDistance(
                 globalPositionState.currentPosition,
                 centerPosition
@@ -271,7 +268,6 @@ export function interpolatePosition(
         // Generate movement direction based on current position
         globalPositionState.movementDirection = generateMovementDirection(
             globalPositionState.currentPosition,
-            centerPosition,
             currentDistanceFromCenter,
             radius
         );

@@ -20,7 +20,8 @@ export const defaultLatLonAltRad: LatLonAltRad = {
     lat: 44.970814,
     lon: -93.292994,
     altitude: 252,
-    radius: 0.00035,
+    // radius: 0.00035, used to be in degrees, now in meters
+    radius: 40,
 };
 
 export const defaultGarminCreator: Creator = {
