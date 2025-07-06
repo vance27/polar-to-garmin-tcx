@@ -44,8 +44,9 @@ export function interpolatePosition(
 // TODO need to reduce the traveled altitude - currently too high
 export function interpolateAltitude(index: number): number {
     // Create gentle elevation changes
-    const baseAltitude = 100;
-    const variation = 10 * Math.sin(index * 0.1);
+    // 252m is parade stadium elevation - soccer fields should be relatively flastt
+    const baseAltitude = 252; // TODO base altitude should come from config data - maybe an api call to google for coordinates?
+    const variation = 0.1 * Math.sin(index * 0.1);
     return baseAltitude + variation;
 }
 
@@ -163,7 +164,7 @@ export function enhanceTrackDataWithSpeedDistance(
             ...tp,
             // TODO added position
             Position:
-                tp.Position || interpolatePosition(index, trackpoints.length),
+                tp.Position || interpolatePosition(index, trackpoints.length), // TODO position needs to based on distance relative to the last point rather than random.
             AltitudeMeters: tp.AltitudeMeters || interpolateAltitude(index), // TODO added altitude
             // HeartRateBpm: tp.HeartRateBpm || interpolateHeartRate(index), // TODO shouldn't need
             // Time: tp.Time || interpolateTime(index, trackpoints.length), // TODO shouldn't need
@@ -217,49 +218,43 @@ export function transformLap(laps: PolarLap | PolarLap[]): Lap[] {
 
     const lapDistances = distributeDistanceAcrossLaps(lapArray, totalDistance);
 
-    return lapArray.map((lap, index) => temp(lap, lapDistances, index));
-}
+    return lapArray.map((lap: PolarLap, index: number) => {
+        const trackPoints = lap.Track.Trackpoint;
+        const targetLapDistance = lapDistances[index];
 
-export function temp(
-    lap: PolarLap,
-    lapDistances: number[],
-    index: number
-): Lap {
-    const trackPoints = lap.Track.Trackpoint;
-    const targetLapDistance = lapDistances[index];
+        // Enhance track data with realistic speed and distance
+        const enhancedTrackData = enhanceTrackDataWithSpeedDistance(
+            trackPoints,
+            targetLapDistance
+        );
 
-    // Enhance track data with realistic speed and distance
-    const enhancedTrackData = enhanceTrackDataWithSpeedDistance(
-        trackPoints,
-        targetLapDistance
-    );
+        // Calculate lap statistics
+        const speeds = enhancedTrackData
+            .map((tp) => Number(tp.Extensions?.['ns3:TPX']['ns3:Speed']))
+            .filter((s) => s !== undefined)
+            .filter((s) => s > 0);
 
-    // Calculate lap statistics
-    const speeds = enhancedTrackData
-        .map((tp) => Number(tp.Extensions?.['ns3:TPX']['ns3:Speed']))
-        .filter((s) => s !== undefined)
-        .filter((s) => s > 0);
+        const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
+        const avgCadence =
+            enhancedTrackData.reduce((sum, tp) => sum + (tp.Cadence || 0), 0) /
+            enhancedTrackData.length;
 
-    const maxSpeed = speeds.length > 0 ? Math.max(...speeds) : 0;
-    const avgCadence =
-        enhancedTrackData.reduce((sum, tp) => sum + (tp.Cadence || 0), 0) /
-        enhancedTrackData.length;
-
-    return {
-        DistanceMeters: targetLapDistance,
-        Cadence: Math.round(avgCadence),
-        Track: {
-            Trackpoint: enhancedTrackData,
-        },
-        TotalTimeSeconds: lap.TotalTimeSeconds || enhancedTrackData.length, // Trackpoint length
-        MaximumSpeed: maxSpeed,
-        Calories: lap.Calories || Math.round(targetLapDistance * 0.05), // Rough calorie estimate
-        AverageHeartRateBpm: lap.AverageHeartRateBpm || { Value: 0 },
-        MaximumHeartRateBpm: lap.MaximumHeartRateBpm || { Value: 0 },
-        Intensity: lap.Intensity || 'Active',
-        TriggerMethod: lap.TriggerMethod || 'Manual',
-        '@_StartTime': lap['@_StartTime'] || new Date().toISOString(),
-    };
+        return {
+            DistanceMeters: targetLapDistance,
+            Cadence: Math.round(avgCadence),
+            Track: {
+                Trackpoint: enhancedTrackData,
+            },
+            TotalTimeSeconds: lap.TotalTimeSeconds || enhancedTrackData.length, // Trackpoint length
+            MaximumSpeed: maxSpeed,
+            Calories: lap.Calories || Math.round(targetLapDistance * 0.05), // Rough calorie estimate
+            AverageHeartRateBpm: lap.AverageHeartRateBpm || { Value: 0 },
+            MaximumHeartRateBpm: lap.MaximumHeartRateBpm || { Value: 0 },
+            Intensity: lap.Intensity || 'Active',
+            TriggerMethod: lap.TriggerMethod || 'Manual',
+            '@_StartTime': lap['@_StartTime'] || new Date().toISOString(),
+        };
+    });
 }
 
 export function transformActivities(activity: PolarActivity): Activities {

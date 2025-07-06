@@ -4,3 +4,5 @@ build/
 *.min.js
 *.bundle.js
 coverage/
+*.tcx
+*.xml
