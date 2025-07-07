@@ -236,28 +236,107 @@ export default class StravaDataFetcher {
         filename: string
     ): Promise<boolean> {
         console.log(`⬇️  Downloading TCX for activity ${activityId}...`);
+        try {
+            // www.strava.com/activities/2865391236/export_tcx
+            // class StravaDownloader {
+            //     constructor(cookies) {
+            //         this.cookies = cookies;
+            //         this.client = axios.create({
+            //             headers: {
+            //                 Cookie: cookies,
+            //                 'User-Agent':
+            //                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            //             },
+            //         });
+            //     }
 
-        const response = await this.makeAuthenticatedRequest(
-            `https://www.strava.com/api/v3/activities/${activityId}/export_tcx`
-        );
+            //     async getCSRFToken() {
+            //         const response = await this.client.get(
+            //             'https://www.strava.com/dashboard'
+            //         );
+            //         const $ = cheerio.load(response.data);
+            //         return $('meta[name="csrf-token"]').attr('content');
+            //     }
 
-        if (!response.ok) {
-            if (response.status === 404) {
+            //     async downloadTCX(activityId) {
+            //         const csrfToken = await this.getCSRFToken();
+
+            //         const response = await this.client.get(
+            //             `https://www.strava.com/activities/${activityId}/export_tcx`,
+            //             {
+            //                 headers: {
+            //                     'X-CSRF-Token': csrfToken,
+            //                     'X-Requested-With': 'XMLHttpRequest',
+            //                 },
+            //             }
+            //         );
+
+            //         return response.data;
+            //     }
+            // }
+            // TODO this works lol
+            // TODO currently copying cookie and x-csrf-token directly from the browser
+            const response = await this.makeAuthenticatedRequest(
+                `https://www.strava.com/activities/${activityId}/export_tcx`,
+                {
+                    headers: {
+                        Cookie: '',
+                        'User-Agent':
+                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'X-CSRF-Token': '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    console.log(
+                        `   ⚠️  TCX not available for activity ${activityId}`
+                    );
+                    throw new Error(`TCX not available`);
+                }
+                throw new Error(
+                    `Failed to download TCX for activity ${activityId}: ${response.status}`
+                );
+            }
+            const tcxData = await response.text();
+            const filePath = path.join(OUTPUT_DIR, filename);
+
+            await fs.writeFile(filePath, tcxData);
+            console.log(`   ✅ Saved: ${filename}`);
+        } catch (err) {
+            console.log(
+                'Failed to download tcx. Trying to download original...'
+            );
+            try {
+                const response = await this.makeAuthenticatedRequest(
+                    `https://www.strava.com/api/v3/routes/${activityId}/export_original`
+                );
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        console.log(
+                            `   ⚠️  Original not available for activity ${activityId}`
+                        );
+                        throw new Error(`Original not available`);
+                    }
+                    throw new Error(
+                        `Failed to download Original for activity ${activityId}: ${response.status}`
+                    );
+                }
+                const tcxData = await response.text();
+                const filePath = path.join(OUTPUT_DIR, filename);
+
+                await fs.writeFile(filePath, tcxData);
+                console.log(`   ✅ Saved: ${filename}`);
+            } catch (err) {
                 console.log(
-                    `   ⚠️  TCX not available for activity ${activityId}`
+                    'Unable to download both original and tcx. Download failed'
                 );
                 return false;
             }
-            throw new Error(
-                `Failed to download TCX for activity ${activityId}: ${response.status}`
-            );
         }
-
-        const tcxData = await response.text();
-        const filePath = path.join(OUTPUT_DIR, filename);
-
-        await fs.writeFile(filePath, tcxData);
-        console.log(`   ✅ Saved: ${filename}`);
 
         return true;
     }
