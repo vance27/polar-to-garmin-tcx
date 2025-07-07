@@ -3,9 +3,10 @@ import {
     Creator,
     GarminTcxDocument,
     TrainingCenterDatabase,
-} from '../types/garmin-zod.js';
+    LatLonAltRad,
+    SpeedDistanceConfig,
+} from '@ptgt/fitness-zod';
 import { z } from 'zod';
-import { LatLonAltRad, SpeedDistanceConfig } from '../types/interface.js';
 
 export const defaultSpeedDistanceConfig: SpeedDistanceConfig = {
     restingHR: 50,

@@ -1,3 +1,3 @@
 export function fitnessZod(): string {
-    return 'fitness-zod';
+    return '@ptgt/fitness-zod';
 }

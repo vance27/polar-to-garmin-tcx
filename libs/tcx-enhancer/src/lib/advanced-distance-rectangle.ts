@@ -1,10 +1,10 @@
-import { Position, Trackpoint } from '../types/garmin-zod.js';
-import { PolarTrackpoint } from '../types/polar-zod.js';
-import { defaultLatLonAltRad, defaultSpeedDistanceConfig } from './defaults.js';
+import { PolarTrackpoint, Position, Trackpoint } from '@ptgt/fitness-zod';
+
+import { defaultLatLonAltRad, defaultSpeedDistanceConfig } from './defaults';
 import {
     calculateSpeedFromHR,
     interpolateAltitude,
-} from './track-data-enhancer.js';
+} from './track-data-enhancer';
 
 interface PositionState {
     currentPosition: Position;
@@ -153,7 +153,7 @@ function generateRandomTargetRectangle(
 // Add natural jitter to movement direction
 function addJitterToDirection(
     direction: { lat: number; lon: number },
-    jitterAmount: number = 0.3
+    jitterAmount = 0.3
 ): { lat: number; lon: number } {
     const jitterLat = (Math.random() - 0.5) * jitterAmount;
     const jitterLon = (Math.random() - 0.5) * jitterAmount;
@@ -168,7 +168,7 @@ function addJitterToDirection(
 function applyMomentum(
     newDirection: { lat: number; lon: number },
     momentum: { lat: number; lon: number },
-    momentumFactor: number = 0.4
+    momentumFactor = 0.4
 ): { lat: number; lon: number } {
     return {
         lat:
@@ -258,10 +258,10 @@ let globalPositionState: PositionState | null = null;
 export function interpolatePosition(
     index: number,
     totalPoints: number,
-    speed: number = 0,
+    speed = 0,
     previousPosition?: Position,
-    width: number = 100, // Default width in meters
-    height: number = 80 // Default height in meters
+    width = 100, // Default width in meters
+    height = 80 // Default height in meters
 ): Position {
     const { lat, lon } = defaultLatLonAltRad;
     const centerPosition: Position = {
@@ -468,8 +468,8 @@ export function interpolatePosition(
 export function enhanceTrackDataWithSpeedDistanceAdv(
     trackpoints: PolarTrackpoint[],
     targetLapDistance: number,
-    width: number = 70, // Default width in meters
-    height: number = 100 // Default height in meters
+    width = 70, // Default width in meters
+    height = 100 // Default height in meters
 ): Trackpoint[] {
     let cumulativeDistance = 0;
     const enhancedPointsPosition: any[] = [];

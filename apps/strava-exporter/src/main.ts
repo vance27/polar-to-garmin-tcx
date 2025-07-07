@@ -1,4 +1,4 @@
-import StravaDataFetcher from 'strava-client';
+import StravaDataFetcher from '@ptgt/strava-client';
 
 import { config } from 'dotenv';
 

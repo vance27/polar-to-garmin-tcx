@@ -1,1 +1,3 @@
-export * from './lib/tcx-enhancer';
+import { PolarToGarminTCXConverter } from './lib/PolarToGarminTCXConverter';
+
+export { PolarToGarminTCXConverter };

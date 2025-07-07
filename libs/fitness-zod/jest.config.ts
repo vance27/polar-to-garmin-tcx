@@ -1,5 +1,5 @@
 export default {
-    displayName: 'fitness-zod',
+    displayName: '@ptgt/fitness-zod',
     preset: '../../jest.preset.cjs',
     testEnvironment: 'node',
     transform: {

@@ -1,5 +1,5 @@
-import { Position, Trackpoint } from '../types/garmin-zod.js';
-import { PolarTrackpoint } from '../types/polar-zod.js';
+import { PolarTrackpoint, Position, Trackpoint } from '@ptgt/fitness-zod';
+
 import { defaultLatLonAltRad, defaultSpeedDistanceConfig } from './defaults.js';
 import {
     calculateSpeedFromHR,
@@ -187,7 +187,7 @@ export function enhanceTrackDataWithSpeedDistanceAdv(
 export function interpolatePosition(
     index: number,
     totalPoints: number,
-    speed: number = 0,
+    speed = 0,
     previousPosition?: Position
 ): Position {
     const { lat, lon, radius } = defaultLatLonAltRad;

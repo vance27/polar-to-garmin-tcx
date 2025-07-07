@@ -1,7 +1,6 @@
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
-import { GarminTcxDocument } from '../types/garmin-zod.js';
+import { GarminTcxDocument, PolarTcxDocument } from '@ptgt/fitness-zod';
 import { transformActivities } from './track-data-enhancer.js';
-import { PolarTcxDocument } from '../types/polar-zod.js';
 import { defaultGarminTcxDocument } from './defaults.js';
 
 export class PolarToGarminTCXConverter {

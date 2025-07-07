@@ -4,19 +4,17 @@ import {
     Lap,
     Activities,
     Trackpoint,
-} from '../types/garmin-zod.js';
-import { SpeedDistanceConfig } from '../types/interface.js';
-import {
+    SpeedDistanceConfig,
     PolarLap,
     PolarActivity,
     PolarTrackpoint,
-} from '../types/polar-zod.js';
-import { enhanceTrackDataWithSpeedDistanceAdv } from './advanced-distance-rectangle.js';
+} from '@ptgt/fitness-zod';
+import { enhanceTrackDataWithSpeedDistanceAdv } from './advanced-distance-rectangle';
 import {
     defaultGarminCreator,
     defaultLatLonAltRad,
     defaultSpeedDistanceConfig,
-} from './defaults.js';
+} from './defaults';
 
 export function interpolateTime(index: number, totalPoints: number): string {
     const baseTime = new Date();
