@@ -5,6 +5,10 @@ import {
     StravaTokens,
     StravaActivity,
 } from './strava-interfaces.js';
+import { config } from 'dotenv';
+
+config({ path: '.env' });
+config({ path: '.env.local', override: true });
 
 const STRAVA_CONFIG: StravaConfig = {
     client_id: process.env.STRAVA_CLIENT_ID || 'your_client_id',
@@ -34,7 +38,10 @@ export default class StravaDataFetcher {
 
     private async loadTokens(): Promise<void> {
         try {
-            const tokenData = await fs.readFile('strava_tokens.json', 'utf8');
+            const tokenData = await fs.readFile(
+                './secrets/strava_tokens.json',
+                'utf8'
+            );
             const tokens: StravaTokens = JSON.parse(tokenData);
             this.accessToken = tokens.access_token;
             this.refreshToken = tokens.refresh_token;
@@ -46,7 +53,7 @@ export default class StravaDataFetcher {
 
     private async saveTokens(tokens: StravaTokens): Promise<void> {
         await fs.writeFile(
-            'strava_tokens.json',
+            './secrets/strava_tokens.json',
             JSON.stringify(tokens, null, 2)
         );
         this.accessToken = tokens.access_token;
@@ -91,7 +98,7 @@ export default class StravaDataFetcher {
     }
 
     private async exchangeCodeForTokens(code: string): Promise<StravaTokens> {
-        const response = await fetch('https://www.strava.com/oauth/token', {
+        const init = {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -102,10 +109,17 @@ export default class StravaDataFetcher {
                 code: code,
                 grant_type: 'authorization_code',
             }),
-        });
+        };
+        console.log(init);
+        const response = await fetch(
+            'https://www.strava.com/oauth/token',
+            init
+        );
 
         if (!response.ok) {
-            throw new Error(`Token exchange failed: ${response.status}`);
+            throw new Error(
+                `Token exchange failed: ${response.status}, ${JSON.stringify(response.statusText)}`
+            );
         }
 
         return (await response.json()) as StravaTokens;

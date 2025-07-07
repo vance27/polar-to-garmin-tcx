@@ -4,4 +4,7 @@ dist/
 tcx-files/*
 !tcx-files/.gitkeep
 
+secrets/*
+!secrets/.gitkeep
+
 .env.local

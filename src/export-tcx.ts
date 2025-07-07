@@ -1,4 +1,8 @@
 import StravaDataFetcher from './strava-api/strava-data-fetcher.js';
+import { config } from 'dotenv';
+
+config({ path: '.env' });
+config({ path: '.env.local', override: true });
 
 // Main execution
 async function main(): Promise<void> {
