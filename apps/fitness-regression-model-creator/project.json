@@ -1,0 +1,64 @@
+{
+    "name": "fitness-regression-model-creator",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/fitness-regression-model-creator/src",
+    "projectType": "application",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
+            "options": {
+                "platform": "node",
+                "outputPath": "dist/apps/fitness-regression-model-creator",
+                "format": ["cjs"],
+                "bundle": false,
+                "main": "apps/fitness-regression-model-creator/src/main.ts",
+                "tsConfig": "apps/fitness-regression-model-creator/tsconfig.app.json",
+                "assets": ["apps/fitness-regression-model-creator/src/assets"],
+                "generatePackageJson": true,
+                "esbuildOptions": {
+                    "sourcemap": true,
+                    "outExtension": {
+                        ".js": ".js"
+                    }
+                }
+            },
+            "configurations": {
+                "development": {},
+                "production": {
+                    "esbuildOptions": {
+                        "sourcemap": false,
+                        "outExtension": {
+                            ".js": ".js"
+                        }
+                    }
+                }
+            }
+        },
+        "serve": {
+            "continuous": true,
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "dependsOn": ["build"],
+            "options": {
+                "buildTarget": "fitness-regression-model-creator:build",
+                "runBuildTargetDependencies": false
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "fitness-regression-model-creator:build:development"
+                },
+                "production": {
+                    "buildTarget": "fitness-regression-model-creator:build:production"
+                }
+            }
+        },
+        "test": {
+            "options": {
+                "passWithNoTests": true
+            }
+        }
+    }
+}
