@@ -16,6 +16,5 @@
             "tcx-enhancer": ["libs/tcx-enhancer/src/index.ts"]
         }
     },
-    "include": ["src/**/*.ts"],
     "exclude": ["node_modules", "dist"]
 }
