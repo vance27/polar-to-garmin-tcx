@@ -14,7 +14,7 @@ const STRAVA_CONFIG: StravaConfig = {
 };
 
 // Output directory for TCX files
-const OUTPUT_DIR = './strava_tcx_data';
+const OUTPUT_DIR = process.env.STRAVA_TCX_OUTPUT_DIR || './strava_tcx_data';
 
 export default class StravaDataFetcher {
     private accessToken: string | null = null;
@@ -188,6 +188,7 @@ export default class StravaDataFetcher {
             const activities: StravaActivity[] = await response.json();
 
             if (activities.length === 0) {
+                console.log('Break no more activities');
                 break; // No more activities
             }
 
@@ -206,6 +207,7 @@ export default class StravaDataFetcher {
             page++;
 
             // Rate limiting - Strava allows 100 requests per 15 minutes
+            console.log('sleeping for strava rate limiting');
             await this.sleep(200);
         }
 
@@ -298,5 +300,3 @@ export default class StravaDataFetcher {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 }
-
-
