@@ -37,22 +37,11 @@
                 }
             }
         },
-        "serve": {
-            "continuous": true,
-            "executor": "@nx/js:node",
-            "defaultConfiguration": "development",
+        "run": {
+            "executor": "nx:run-commands",
             "dependsOn": ["build"],
             "options": {
-                "buildTarget": "strava-exporter:build",
-                "runBuildTargetDependencies": false
-            },
-            "configurations": {
-                "development": {
-                    "buildTarget": "strava-exporter:build:development"
-                },
-                "production": {
-                    "buildTarget": "strava-exporter:build:production"
-                }
+                "command": "node dist/apps/strava-exporter/main.js"
             }
         },
         "test": {
