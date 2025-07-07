@@ -102,7 +102,7 @@ export const Activity = z.object({
 export type Activities = z.infer<typeof Activities>;
 export const Activities = z.object({
     Activity: Activity,
-})
+});
 
 export type Build = z.infer<typeof Build>;
 export const Build = z.object({
