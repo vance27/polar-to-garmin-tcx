@@ -5,7 +5,5 @@
     "type": "commonjs",
     "main": "./src/index.js",
     "types": "./src/index.d.ts",
-    "dependencies": {
-        "dotenv": "^17.0.1"
-    }
+    "dependencies": {}
 }

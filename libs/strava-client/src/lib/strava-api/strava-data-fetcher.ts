@@ -5,10 +5,6 @@ import {
     StravaTokens,
     StravaActivity,
 } from './strava-interfaces';
-import { config } from 'dotenv';
-
-config({ path: '.env' });
-config({ path: '.env.local', override: true });
 
 const STRAVA_CONFIG: StravaConfig = {
     client_id: process.env.STRAVA_CLIENT_ID || 'your_client_id',
