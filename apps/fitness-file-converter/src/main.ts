@@ -8,4 +8,8 @@ const converter = new FitToCsvConverter({
     maxSpeedMps: 8.0, // ~2 min/km maximum
 });
 
-await converter.convertFitFilesToCsv('./fit_files', './training_data.csv');
+converter
+    .convertFitFilesToCsv('./fit_files', './training_data.csv')
+    .catch((e) => {
+        console.log(e);
+    });

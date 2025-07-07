@@ -9,6 +9,11 @@ tcx-files/*
 secrets/*
 !secrets/.gitkeep
 
+fit_files/*
+!fit_files/.gitkeep
+
+training_data.csv
+
 .env.local
 
 

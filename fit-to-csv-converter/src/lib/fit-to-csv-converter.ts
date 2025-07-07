@@ -1,4 +1,4 @@
-import { FitParser, FitFileType } from '@garmin/fitsdk';
+import { Decoder, Stream } from '@garmin/fitsdk';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -113,10 +113,14 @@ class FitToCsvConverter {
         filePath: string
     ): Promise<TrainingDataPoint[]> {
         const fitData = await fs.readFile(filePath);
-        const parser = new FitParser();
 
         // Parse the FIT file
-        const parsedData = parser.parse(fitData.buffer);
+        const stream = Stream.fromArrayBuffer(fitData.buffer);
+        const decoder = new Decoder(stream);
+        const { messages, errors } = decoder.read();
+        const parsedData = {
+            messages,
+        };
 
         if (!parsedData.messages) {
             throw new Error('No messages found in FIT file');
@@ -435,36 +439,6 @@ class FitToCsvConverter {
         const csvContent = [headers, ...csvRows].join('\n');
         await fs.writeFile(outputPath, csvContent);
     }
-}
-
-// Example usage
-async function main() {
-    console.log('🏃‍♂️ FIT to CSV Converter Starting...\n');
-
-    const converter = new FitToCsvConverter({
-        minHeartRate: 60,
-        maxHeartRate: 200,
-        maxHrZone: 190, // Your estimated max HR
-        minSpeedMps: 1.0, // ~17 min/km minimum
-        maxSpeedMps: 8.0, // ~2 min/km maximum
-        smoothingWindowSeconds: 10,
-        gradeThreshold: 2.0,
-    });
-
-    try {
-        await converter.convertFitFilesToCsv(
-            './fit_files', // Directory containing FIT files
-            './training_data.csv' // Output CSV file
-        );
-    } catch (error) {
-        console.error('❌ Conversion failed:', error);
-        process.exit(1);
-    }
-}
-
-// Run if this file is executed directly
-if (require.main === module) {
-    main().catch(console.error);
 }
 
 export { FitToCsvConverter, TrainingDataPoint, ProcessingConfig };
