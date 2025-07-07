@@ -11,6 +11,7 @@
         "rootDir": ".",
         "baseUrl": ".",
         "paths": {
+            "@ptgt/fit-to-csv-converter": ["fit-to-csv-converter/src/index.ts"],
             "@ptgt/fitness-zod": ["libs/fitness-zod/src/index.ts"],
             "@ptgt/strava-client": ["libs/strava-client/src/index.ts"],
             "@ptgt/tcx-enhancer": ["libs/tcx-enhancer/src/index.ts"],

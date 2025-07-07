@@ -1,0 +1,20 @@
+{
+    "name": "@ptgt/fit-to-csv-converter",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "fit-to-csv-converter/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/fit-to-csv-converter",
+                "tsConfig": "fit-to-csv-converter/tsconfig.lib.json",
+                "packageJson": "fit-to-csv-converter/package.json",
+                "main": "fit-to-csv-converter/src/index.ts",
+                "assets": ["fit-to-csv-converter/*.md"]
+            }
+        }
+    }
+}
