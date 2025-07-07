@@ -10,7 +10,8 @@
         "rootDir": "./src",
         "outDir": "dist",
         "paths": {
-            "fitness-zod": ["libs/fitness-zod/src/index.ts"]
+            "fitness-zod": ["libs/fitness-zod/src/index.ts"],
+            "tcx-enhancer": ["libs/tcx-enhancer/src/index.ts"]
         }
     },
     "include": ["src/**/*.ts"],

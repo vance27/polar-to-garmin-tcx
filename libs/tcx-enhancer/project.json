@@ -1,0 +1,20 @@
+{
+    "name": "tcx-enhancer",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/tcx-enhancer/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/tcx-enhancer",
+                "tsConfig": "libs/tcx-enhancer/tsconfig.lib.json",
+                "packageJson": "libs/tcx-enhancer/package.json",
+                "main": "libs/tcx-enhancer/src/index.ts",
+                "assets": ["libs/tcx-enhancer/*.md"]
+            }
+        }
+    }
+}
