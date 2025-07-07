@@ -1,0 +1,59 @@
+{
+    "name": "hr-enhancer",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/hr-enhancer/src",
+    "projectType": "application",
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
+            "options": {
+                "platform": "node",
+                "outputPath": "dist/apps/hr-enhancer",
+                "format": ["cjs"],
+                "bundle": false,
+                "main": "apps/hr-enhancer/src/main.ts",
+                "tsConfig": "apps/hr-enhancer/tsconfig.app.json",
+                "assets": ["apps/hr-enhancer/src/assets"],
+                "generatePackageJson": true,
+                "esbuildOptions": {
+                    "sourcemap": true,
+                    "outExtension": {
+                        ".js": ".js"
+                    }
+                }
+            },
+            "configurations": {
+                "development": {},
+                "production": {
+                    "esbuildOptions": {
+                        "sourcemap": false,
+                        "outExtension": {
+                            ".js": ".js"
+                        }
+                    }
+                }
+            }
+        },
+        "serve": {
+            "continuous": true,
+            "executor": "@nx/js:node",
+            "defaultConfiguration": "development",
+            "dependsOn": ["build"],
+            "options": {
+                "buildTarget": "hr-enhancer:build",
+                "runBuildTargetDependencies": false
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "hr-enhancer:build:development"
+                },
+                "production": {
+                    "buildTarget": "hr-enhancer:build:production"
+                }
+            }
+        }
+    }
+}
