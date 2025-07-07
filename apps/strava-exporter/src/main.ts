@@ -1,10 +1,5 @@
 import StravaDataFetcher from '@ptgt/strava-client';
 
-import { config } from 'dotenv';
-
-config({ path: '.env' });
-config({ path: '.env.local', override: true });
-
 // Main execution
 async function main(): Promise<void> {
     console.log('🏃‍♂️ Strava TCX Data Fetcher Starting...\n');

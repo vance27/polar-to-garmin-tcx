@@ -1,11 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { config } from 'dotenv';
 
 import { PolarToGarminTCXConverter } from '@ptgt/tcx-enhancer';
-
-config({ path: '.env' });
-config({ path: '.env.local', override: true });
 
 process.env = {
     ...process.env,
