@@ -8,7 +8,10 @@
         "skipLibCheck": true,
         "noImplicitAny": false,
         "rootDir": "./src",
-        "outDir": "dist"
+        "outDir": "dist",
+        "paths": {
+            "fitness-zod": ["libs/fitness-zod/src/index.ts"]
+        }
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules", "dist"]
