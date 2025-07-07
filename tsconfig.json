@@ -11,6 +11,7 @@
         "outDir": "dist",
         "paths": {
             "fitness-zod": ["libs/fitness-zod/src/index.ts"],
+            "strava-client": ["libs/strava-client/src/index.ts"],
             "tcx-enhancer": ["libs/tcx-enhancer/src/index.ts"]
         }
     },
