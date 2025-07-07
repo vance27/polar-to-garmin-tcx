@@ -5,10 +5,10 @@
         "moduleResolution": "Node",
         "strict": true,
         "esModuleInterop": true,
-        "skipLibCheck": true,
         "noImplicitAny": false,
-        "rootDir": "./src",
-        "outDir": "dist",
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "rootDir": ".",
         "baseUrl": ".",
         "paths": {
             "fitness-zod": ["libs/fitness-zod/src/index.ts"],
@@ -16,5 +16,6 @@
             "tcx-enhancer": ["libs/tcx-enhancer/src/index.ts"]
         }
     },
+    "include": ["**/*.ts"],
     "exclude": ["node_modules", "dist"]
 }

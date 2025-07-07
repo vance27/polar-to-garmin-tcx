@@ -2,7 +2,10 @@
     "name": "tcx-tool",
     "version": "1.0.0",
     "description": "A simple Node app to process TCX files",
-    "main": "dist/index.js",
+    "workspaces": [
+        "apps/*",
+        "libs/*"
+    ],
     "scripts": {
         "build": "tsc",
         "start": "node dist/index.js",

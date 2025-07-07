@@ -4,7 +4,7 @@ import {
     StravaConfig,
     StravaTokens,
     StravaActivity,
-} from './strava-interfaces.js';
+} from './strava-interfaces';
 import { config } from 'dotenv';
 
 config({ path: '.env' });
