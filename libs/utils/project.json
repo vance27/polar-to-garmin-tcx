@@ -1,5 +1,5 @@
 {
-    "name": "utils",
+    "name": "@ptgt/utils",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/utils/src",
     "projectType": "library",

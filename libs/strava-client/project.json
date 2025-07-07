@@ -1,5 +1,5 @@
 {
-    "name": "strava-client",
+    "name": "@ptgt/strava-client",
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/strava-client/src",
     "projectType": "library",

@@ -1,5 +1,5 @@
 {
-    "name": "tcx-enhancer",
+    "name": "@ptgt/tcx-enhancer",
     "version": "0.0.1",
     "private": true,
     "type": "module",
