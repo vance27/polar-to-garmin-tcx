@@ -3,7 +3,7 @@ import { defaultLatLonAltRad, defaultSpeedDistanceConfig } from './defaults';
 import {
     calculateSpeedFromHR,
     interpolateAltitude,
-} from './track-data-enhancer.js';
+} from './track-data-enhancer';
 
 interface PositionState {
     currentPosition: Position;

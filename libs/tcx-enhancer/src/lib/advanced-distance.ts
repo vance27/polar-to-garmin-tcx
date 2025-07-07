@@ -1,10 +1,10 @@
 import { PolarTrackpoint, Position, Trackpoint } from '@ptgt/fitness-zod';
 
-import { defaultLatLonAltRad, defaultSpeedDistanceConfig } from './defaults.js';
+import { defaultLatLonAltRad, defaultSpeedDistanceConfig } from './defaults';
 import {
     calculateSpeedFromHR,
     interpolateAltitude,
-} from './track-data-enhancer.js';
+} from './track-data-enhancer';
 
 interface PositionState {
     currentPosition: Position;
