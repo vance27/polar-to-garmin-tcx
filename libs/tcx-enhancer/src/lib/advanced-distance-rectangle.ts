@@ -115,7 +115,8 @@ function getDistanceFromRectangleEdge(
 
 function getRandomSidelinePosition(width: number, height: number): Position {
     const { lat, lon } = defaultLatLonAltRad;
-    const sidelineDistance = -30; // meters from center
+    // const sidelineDistance = -30; // meters from center
+    const sidelineDistance = Number(process.env.SIDELINE_DISTANCE ?? -30); // meters from center
 
     // Add some random variation along the sideline
     const alongSidelineVariation = (Math.random() - 0.5) * 10; // ±10 meters

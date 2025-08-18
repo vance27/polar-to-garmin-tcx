@@ -18,9 +18,9 @@ export const defaultSpeedDistanceConfig: SpeedDistanceConfig = {
 };
 
 export const defaultLatLonAltRad: LatLonAltRad = {
-    lat: 44.970814,
-    lon: -93.292994,
-    altitude: 252,
+    lat: Number(process.env.LATITUDE ?? 44.970814),
+    lon: Number(process.env.LONGITUDE ?? -93.292994),
+    altitude: Number(process.env.ALTITUDE ?? 252),
     // radius: 0.00035, used to be in degrees, now in meters
     radius: 40,
 };
