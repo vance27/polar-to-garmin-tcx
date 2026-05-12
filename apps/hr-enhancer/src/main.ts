@@ -7,6 +7,7 @@ process.env = {
     ...process.env,
     INPUT_TCX: process.env.INPUT_TCX ? process.env.INPUT_TCX : 'input.tcx',
     OUTPUT_TCX: process.env.INPUT_TCX ? process.env.OUTPUT_TCX : 'output.tcx',
+    FIELD_ROTATION: process.env.FIELD_ROTATION ? process.env.FIELD_ROTATION : '0',
 };
 
 const processViaClaude = async () => {

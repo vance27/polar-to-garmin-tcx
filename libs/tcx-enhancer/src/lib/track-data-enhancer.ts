@@ -210,9 +210,14 @@ export function transformLap(laps: PolarLap | PolarLap[]): Lap[] {
         const targetLapDistance = lapDistances[index];
 
         // Enhance track data with realistic speed and distance
+        const fieldRotation = Number(process.env.FIELD_ROTATION ?? '0');
+        const rotation = Math.max(-180, Math.min(180, fieldRotation));
         const enhancedTrackData = enhanceTrackDataWithSpeedDistanceAdv(
             trackPoints,
-            targetLapDistance
+            targetLapDistance,
+            50,
+            100,
+            rotation
         );
 
         // Calculate lap statistics

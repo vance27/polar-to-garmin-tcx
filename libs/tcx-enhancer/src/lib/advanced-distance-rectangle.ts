@@ -51,21 +51,78 @@ function calculateDistance(pos1: Position, pos2: Position): number {
     return R * c;
 }
 
-// Check if position is within rectangular boundary
+// NEW: Rotation helper functions
+/**
+ * Rotate a point around the origin (0,0) by the given angle in degrees
+ */
+function rotatePoint(
+    x: number,
+    y: number,
+    angleDegrees: number
+): { x: number; y: number } {
+    const angleRadians = (angleDegrees * Math.PI) / 180;
+    const cos = Math.cos(angleRadians);
+    const sin = Math.sin(angleRadians);
+
+    return {
+        x: x * cos - y * sin,
+        y: x * sin + y * cos,
+    };
+}
+
+/**
+ * Convert a position offset (in meters from center) to lat/lon coordinates
+ * accounting for field rotation
+ */
+function offsetToPosition(
+    offsetX: number,
+    offsetY: number,
+    centerLat: number,
+    centerLon: number,
+    rotation = 0
+): Position {
+    // Apply rotation to the offset
+    const rotated = rotatePoint(offsetX, offsetY, rotation);
+
+    return {
+        LatitudeDegrees: centerLat + metersToLatDegrees(rotated.y),
+        LongitudeDegrees: centerLon + metersToLonDegrees(rotated.x, centerLat),
+    };
+}
+
+/**
+ * Convert a lat/lon position to offset (in meters from center)
+ * accounting for field rotation
+ */
+function positionToOffset(
+    position: Position,
+    centerLat: number,
+    centerLon: number,
+    rotation = 0
+): { x: number; y: number } {
+    // Convert to meters offset
+    const offsetX =
+        (position.LongitudeDegrees - centerLon) *
+        111000 *
+        Math.cos((centerLat * Math.PI) / 180);
+    const offsetY = (position.LatitudeDegrees - centerLat) * 111000;
+
+    // Apply reverse rotation to get back to field coordinates
+    return rotatePoint(offsetX, offsetY, -rotation);
+}
+
+// MODIFIED: Check if position is within rectangular boundary (accounting for rotation)
 function isWithinRectangle(
     position: Position,
     centerLat: number,
     centerLon: number,
     width: number,
-    height: number
+    height: number,
+    rotation = 0
 ): boolean {
-    const latDiff = Math.abs(position.LatitudeDegrees - centerLat);
-    const lonDiff = Math.abs(position.LongitudeDegrees - centerLon);
+    const offset = positionToOffset(position, centerLat, centerLon, rotation);
 
-    const maxLatDiff = metersToLatDegrees(height / 2);
-    const maxLonDiff = metersToLonDegrees(width / 2, centerLat);
-
-    return latDiff <= maxLatDiff && lonDiff <= maxLonDiff;
+    return Math.abs(offset.x) <= width / 2 && Math.abs(offset.y) <= height / 2;
 }
 
 // Get distance from center of rectangle (for boundary calculations)
@@ -80,75 +137,69 @@ function getDistanceFromRectangleCenter(
     });
 }
 
-// Calculate distance from rectangle edge (0 if inside, positive if outside)
+// MODIFIED: Calculate distance from rectangle edge (accounting for rotation)
 function getDistanceFromRectangleEdge(
     position: Position,
     centerLat: number,
     centerLon: number,
     width: number,
-    height: number
+    height: number,
+    rotation = 0
 ): number {
-    const latDiff = Math.abs(position.LatitudeDegrees - centerLat);
-    const lonDiff = Math.abs(position.LongitudeDegrees - centerLon);
+    const offset = positionToOffset(position, centerLat, centerLon, rotation);
 
-    const maxLatDiff = metersToLatDegrees(height / 2);
-    const maxLonDiff = metersToLonDegrees(width / 2, centerLat);
+    const xExcess = Math.max(0, Math.abs(offset.x) - width / 2);
+    const yExcess = Math.max(0, Math.abs(offset.y) - height / 2);
 
     // If inside rectangle, return 0
-    if (latDiff <= maxLatDiff && lonDiff <= maxLonDiff) {
+    if (xExcess === 0 && yExcess === 0) {
         return 0;
     }
 
-    // Calculate distance to nearest edge
-    const latExcess = Math.max(0, latDiff - maxLatDiff);
-    const lonExcess = Math.max(0, lonDiff - maxLonDiff);
+    return Math.sqrt(xExcess * xExcess + yExcess * yExcess);
+}
 
-    // Convert back to meters for distance calculation
-    const latExcessMeters = latExcess * 111000;
-    const lonExcessMeters =
-        lonExcess * 111000 * Math.cos((centerLat * Math.PI) / 180);
+// MODIFIED: Get random sideline position (accounting for rotation)
+function getRandomSidelinePosition(
+    width: number,
+    height: number,
+    rotation = 0
+): Position {
+    const { lat, lon } = defaultLatLonAltRad;
+    const sidelineDistance = Number(process.env.SIDELINE_DISTANCE ?? -30);
+    const alongSidelineVariation = (Math.random() - 0.5) * 10;
 
-    return Math.sqrt(
-        latExcessMeters * latExcessMeters + lonExcessMeters * lonExcessMeters
+    // Generate sideline position in field coordinates (unrotated)
+    return offsetToPosition(
+        sidelineDistance,
+        alongSidelineVariation,
+        lat,
+        lon,
+        rotation
     );
 }
 
-function getRandomSidelinePosition(width: number, height: number): Position {
-    const { lat, lon } = defaultLatLonAltRad;
-    // const sidelineDistance = -30; // meters from center
-    const sidelineDistance = Number(process.env.SIDELINE_DISTANCE ?? -30); // meters from center
-
-    // Add some random variation along the sideline
-    const alongSidelineVariation = (Math.random() - 0.5) * 10; // ±10 meters
-
-    return {
-        LatitudeDegrees: lat + metersToLatDegrees(alongSidelineVariation),
-        LongitudeDegrees: lon + metersToLonDegrees(sidelineDistance, lat),
-    };
-}
-
-// Generate a random target position within the rectangle
+// MODIFIED: Generate random target within rectangle (accounting for rotation)
 function generateRandomTargetRectangle(
     width: number,
-    height: number
+    height: number,
+    rotation = 0
 ): Position {
     const { lat, lon } = defaultLatLonAltRad;
 
-    // Generate a random position within 60-90% of the rectangle dimensions for more natural movement
     const targetWidth = (0.6 + Math.random() * 0.3) * width;
     const targetHeight = (0.6 + Math.random() * 0.3) * height;
 
-    // Random offset from center
     const randomEastWest = (Math.random() - 0.5) * targetWidth;
     const randomNorthSouth = (Math.random() - 0.5) * targetHeight;
 
-    const targetLat = lat + metersToLatDegrees(randomNorthSouth);
-    const targetLon = lon + metersToLonDegrees(randomEastWest, lat);
-
-    return {
-        LatitudeDegrees: targetLat,
-        LongitudeDegrees: targetLon,
-    };
+    return offsetToPosition(
+        randomEastWest,
+        randomNorthSouth,
+        lat,
+        lon,
+        rotation
+    );
 }
 
 // Add natural jitter to movement direction
@@ -181,88 +232,142 @@ function applyMomentum(
     };
 }
 
+// MODIFIED: Generate movement direction (accounting for rotation)
 function generateMovementDirection(
     currentPos: Position,
     targetPos: Position,
     distanceFromCenter: number,
     width: number,
     height: number,
-    momentum: { lat: number; lon: number }
+    momentum: { lat: number; lon: number },
+    rotation = 0
 ): { lat: number; lon: number } {
-    // Calculate direction towards dynamic target instead of always center
-    const towardsTargetLat =
-        targetPos.LatitudeDegrees - currentPos.LatitudeDegrees;
-    const towardsTargetLon =
-        targetPos.LongitudeDegrees - currentPos.LongitudeDegrees;
+    const { lat: centerLat, lon: centerLon } = defaultLatLonAltRad;
 
-    // Normalize the direction
-    const magnitude = Math.sqrt(
-        towardsTargetLat * towardsTargetLat +
-            towardsTargetLon * towardsTargetLon
+    // Convert current position and target to field coordinates
+    const currentOffset = positionToOffset(
+        currentPos,
+        centerLat,
+        centerLon,
+        rotation
     );
-    const normalizedTowardsTarget =
+    const targetOffset = positionToOffset(
+        targetPos,
+        centerLat,
+        centerLon,
+        rotation
+    );
+
+    // Calculate direction in field coordinates
+    const fieldDirection = {
+        x: targetOffset.x - currentOffset.x,
+        y: targetOffset.y - currentOffset.y,
+    };
+
+    // Normalize
+    const magnitude = Math.sqrt(
+        fieldDirection.x * fieldDirection.x +
+            fieldDirection.y * fieldDirection.y
+    );
+    const normalizedFieldDirection =
         magnitude > 0
             ? {
-                  lat: towardsTargetLat / magnitude,
-                  lon: towardsTargetLon / magnitude,
+                  x: fieldDirection.x / magnitude,
+                  y: fieldDirection.y / magnitude,
               }
-            : { lat: 0, lon: 0 };
+            : { x: 0, y: 0 };
 
-    // Calculate bias based on distance from rectangle center
-    // Use diagonal distance of rectangle as reference
+    // Apply existing logic for center bias and random direction in field coordinates
     const maxRectangleDistance = Math.sqrt(width * width + height * height) / 2;
+    const centerDistance = Math.sqrt(
+        currentOffset.x * currentOffset.x + currentOffset.y * currentOffset.y
+    );
     const centerBias = Math.min(
         0.3,
-        Math.pow(distanceFromCenter / maxRectangleDistance, 1.5)
+        Math.pow(centerDistance / maxRectangleDistance, 1.5)
     );
 
-    // Generate random direction with more influence
     const randomAngle = Math.random() * 2 * Math.PI;
-    const randomDirection = {
-        lat: Math.sin(randomAngle),
-        lon: Math.cos(randomAngle),
+    const randomFieldDirection = {
+        x: Math.cos(randomAngle),
+        y: Math.sin(randomAngle),
     };
 
-    // Blend directions with less center bias
-    let blendedDirection = {
-        lat:
-            randomDirection.lat * (1 - centerBias) +
-            normalizedTowardsTarget.lat * centerBias,
-        lon:
-            randomDirection.lon * (1 - centerBias) +
-            normalizedTowardsTarget.lon * centerBias,
+    // Blend directions in field coordinates
+    const blendedFieldDirection = {
+        x:
+            randomFieldDirection.x * (1 - centerBias) +
+            normalizedFieldDirection.x * centerBias,
+        y:
+            randomFieldDirection.y * (1 - centerBias) +
+            normalizedFieldDirection.y * centerBias,
     };
 
-    // Add jitter for natural movement
-    blendedDirection = addJitterToDirection(blendedDirection, 0.4);
+    // Add jitter in field coordinates
+    const jitterAmount = 0.4;
+    blendedFieldDirection.x += (Math.random() - 0.5) * jitterAmount;
+    blendedFieldDirection.y += (Math.random() - 0.5) * jitterAmount;
 
-    // Apply momentum for smoother movement
-    blendedDirection = applyMomentum(blendedDirection, momentum, 0.3);
+    // Convert momentum to field coordinates for blending
+    const currentMomentumOffset = positionToOffset(
+        {
+            LatitudeDegrees: centerLat + momentum.lat / 111000,
+            LongitudeDegrees:
+                centerLon +
+                momentum.lon / (111000 * Math.cos((centerLat * Math.PI) / 180)),
+        },
+        centerLat,
+        centerLon,
+        rotation
+    );
 
-    // Normalize the final direction
+    // Apply momentum in field coordinates
+    const momentumFactor = 0.3;
+    blendedFieldDirection.x =
+        blendedFieldDirection.x * (1 - momentumFactor) +
+        currentMomentumOffset.x * momentumFactor;
+    blendedFieldDirection.y =
+        blendedFieldDirection.y * (1 - momentumFactor) +
+        currentMomentumOffset.y * momentumFactor;
+
+    // Normalize final direction in field coordinates
     const finalMagnitude = Math.sqrt(
-        blendedDirection.lat * blendedDirection.lat +
-            blendedDirection.lon * blendedDirection.lon
+        blendedFieldDirection.x * blendedFieldDirection.x +
+            blendedFieldDirection.y * blendedFieldDirection.y
     );
 
     if (finalMagnitude > 0) {
-        blendedDirection.lat /= finalMagnitude;
-        blendedDirection.lon /= finalMagnitude;
+        blendedFieldDirection.x /= finalMagnitude;
+        blendedFieldDirection.y /= finalMagnitude;
     }
 
-    return blendedDirection;
+    // Rotate the direction vector back to world coordinates
+    const worldDirection = rotatePoint(
+        blendedFieldDirection.x,
+        blendedFieldDirection.y,
+        rotation
+    );
+
+    // Convert back to lat/lon direction
+    return {
+        lat: worldDirection.y / 111000,
+        lon:
+            worldDirection.x / (111000 * Math.cos((centerLat * Math.PI) / 180)),
+    };
 }
 
 // Global position state to maintain continuity
 let globalPositionState: PositionState | null = null;
 
+// MODIFIED: Main interpolatePosition function - add rotation parameter
 export function interpolatePosition(
     index: number,
     totalPoints: number,
     speed = 0,
     previousPosition?: Position,
     width = 100, // Default width in meters
-    height = 80 // Default height in meters
+    height = 80, // Default height in meters
+    rotation = 0 // NEW PARAMETER: degrees of rotation
 ): Position {
     const { lat, lon } = defaultLatLonAltRad;
     const centerPosition: Position = {
@@ -279,7 +384,11 @@ export function interpolatePosition(
             movementDirection: { lat: 0, lon: 1 },
             stationaryTime: 0,
             // Initialize new properties
-            dynamicTarget: generateRandomTargetRectangle(width, height),
+            dynamicTarget: generateRandomTargetRectangle(
+                width,
+                height,
+                rotation
+            ),
             targetChangeCounter: 0,
             momentum: { lat: 0, lon: 0 },
             lastMovementDirection: { lat: 0, lon: 1 },
@@ -292,7 +401,8 @@ export function interpolatePosition(
         // Change target every 8-20 seconds
         globalPositionState.dynamicTarget = generateRandomTargetRectangle(
             width,
-            height
+            height,
+            rotation
         );
         globalPositionState.targetChangeCounter = 0;
     }
@@ -313,29 +423,32 @@ export function interpolatePosition(
         globalPositionState.isOnSideline = true;
         globalPositionState.sidelinePosition = getRandomSidelinePosition(
             width,
-            height
+            height,
+            rotation
         );
         return globalPositionState.sidelinePosition;
     } else if (shouldBeOnSideline && globalPositionState.isOnSideline) {
         // Stay on sideline with minor variation
-        const variation = {
-            lat: (Math.random() - 0.5) * metersToLatDegrees(2), // ±1 meter variation
-            lon:
-                (Math.random() - 0.5) *
-                metersToLonDegrees(
-                    2,
-                    globalPositionState.sidelinePosition!.LatitudeDegrees
-                ),
+        const currentOffset = positionToOffset(
+            globalPositionState.sidelinePosition!,
+            lat,
+            lon,
+            rotation
+        );
+
+        // Add small variation in field coordinates
+        const variationOffset = {
+            x: currentOffset.x + (Math.random() - 0.5) * 2, // ±1 meter variation
+            y: currentOffset.y + (Math.random() - 0.5) * 2,
         };
 
-        return {
-            LatitudeDegrees:
-                globalPositionState.sidelinePosition!.LatitudeDegrees +
-                variation.lat,
-            LongitudeDegrees:
-                globalPositionState.sidelinePosition!.LongitudeDegrees +
-                variation.lon,
-        };
+        return offsetToPosition(
+            variationOffset.x,
+            variationOffset.y,
+            lat,
+            lon,
+            rotation
+        );
     } else if (!shouldBeOnSideline && globalPositionState.isOnSideline) {
         // Moving back from sideline to field
         globalPositionState.isOnSideline = false;
@@ -343,7 +456,8 @@ export function interpolatePosition(
         // Generate new target when returning to field
         globalPositionState.dynamicTarget = generateRandomTargetRectangle(
             width,
-            height
+            height,
+            rotation
         );
     }
 
@@ -365,18 +479,20 @@ export function interpolatePosition(
             // Within 15 meters of target
             globalPositionState.dynamicTarget = generateRandomTargetRectangle(
                 width,
-                height
+                height,
+                rotation
             );
         }
 
-        // Generate movement direction towards dynamic target
+        // Generate movement direction towards dynamic target with rotation
         const newDirection = generateMovementDirection(
             globalPositionState.currentPosition,
             globalPositionState.dynamicTarget,
             currentDistanceFromCenter,
             width,
             height,
-            globalPositionState.momentum
+            globalPositionState.momentum,
+            rotation
         );
 
         // Update momentum
@@ -398,14 +514,12 @@ export function interpolatePosition(
         const adjustedMovementDistance = movementDistance * speedVariation;
 
         // Apply movement
-        const latMovement = metersToLatDegrees(
-            adjustedMovementDistance * globalPositionState.movementDirection.lat
-        );
-        const lonMovement = metersToLonDegrees(
+        const latMovement =
             adjustedMovementDistance *
-                globalPositionState.movementDirection.lon,
-            globalPositionState.currentPosition.LatitudeDegrees
-        );
+            globalPositionState.movementDirection.lat;
+        const lonMovement =
+            adjustedMovementDistance *
+            globalPositionState.movementDirection.lon;
 
         const newPosition: Position = {
             LatitudeDegrees:
@@ -416,28 +530,45 @@ export function interpolatePosition(
                 lonMovement,
         };
 
-        // Ensure we don't exceed the rectangle boundary
-        if (!isWithinRectangle(newPosition, lat, lon, width, height)) {
-            // Constrain to rectangle boundary
-            const maxLatDiff = metersToLatDegrees(height / 2);
-            const maxLonDiff = metersToLonDegrees(width / 2, lat);
+        // Ensure we don't exceed the rotated rectangle boundary
+        if (
+            !isWithinRectangle(newPosition, lat, lon, width, height, rotation)
+        ) {
+            // Project back onto the boundary
+            const currentOffset = positionToOffset(
+                newPosition,
+                lat,
+                lon,
+                rotation
+            );
 
-            // Clamp to boundary
-            const latDiff = newPosition.LatitudeDegrees - lat;
-            const lonDiff = newPosition.LongitudeDegrees - lon;
+            // Clamp to field boundaries
+            const clampedOffset = {
+                x:
+                    Math.sign(currentOffset.x) *
+                    Math.min(Math.abs(currentOffset.x), width / 2),
+                y:
+                    Math.sign(currentOffset.y) *
+                    Math.min(Math.abs(currentOffset.y), height / 2),
+            };
 
-            newPosition.LatitudeDegrees =
-                lat +
-                Math.sign(latDiff) * Math.min(Math.abs(latDiff), maxLatDiff);
-            newPosition.LongitudeDegrees =
-                lon +
-                Math.sign(lonDiff) * Math.min(Math.abs(lonDiff), maxLonDiff);
+            const clampedPosition = offsetToPosition(
+                clampedOffset.x,
+                clampedOffset.y,
+                lat,
+                lon,
+                rotation
+            );
+            globalPositionState.currentPosition = clampedPosition;
 
             // Generate new target when hitting boundary
             globalPositionState.dynamicTarget = generateRandomTargetRectangle(
                 width,
-                height
+                height,
+                rotation
             );
+
+            return clampedPosition;
         }
 
         globalPositionState.currentPosition = newPosition;
@@ -445,32 +576,33 @@ export function interpolatePosition(
     }
 
     // If not moving and not on sideline, stay at current position with minor variation
-    const smallVariation = {
-        lat: (Math.random() - 0.5) * metersToLatDegrees(0.5), // ±0.25 meter variation
-        lon:
-            (Math.random() - 0.5) *
-            metersToLonDegrees(
-                0.5,
-                globalPositionState.currentPosition.LatitudeDegrees
-            ),
+    const currentOffset = positionToOffset(
+        globalPositionState.currentPosition,
+        lat,
+        lon,
+        rotation
+    );
+    const variationOffset = {
+        x: currentOffset.x + (Math.random() - 0.5) * 0.5, // ±0.25 meter variation
+        y: currentOffset.y + (Math.random() - 0.5) * 0.5,
     };
 
-    return {
-        LatitudeDegrees:
-            globalPositionState.currentPosition.LatitudeDegrees +
-            smallVariation.lat,
-        LongitudeDegrees:
-            globalPositionState.currentPosition.LongitudeDegrees +
-            smallVariation.lon,
-    };
+    return offsetToPosition(
+        variationOffset.x,
+        variationOffset.y,
+        lat,
+        lon,
+        rotation
+    );
 }
 
-// Updated enhance function to use rectangular boundary
+// MODIFIED: Updated enhance function to use rectangular boundary with rotation
 export function enhanceTrackDataWithSpeedDistanceAdv(
     trackpoints: PolarTrackpoint[],
     targetLapDistance: number,
     width = 70, // Default width in meters
-    height = 100 // Default height in meters
+    height = 100, // Default height in meters
+    rotation = 0 // NEW PARAMETER: degrees of rotation
 ): Trackpoint[] {
     let cumulativeDistance = 0;
     const enhancedPointsPosition: any[] = [];
@@ -494,7 +626,8 @@ export function enhanceTrackDataWithSpeedDistanceAdv(
             speed,
             previousPosition,
             width,
-            height
+            height,
+            rotation // Pass rotation parameter
         );
 
         enhancedPointsPosition.push({
