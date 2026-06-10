@@ -41,7 +41,7 @@
             "executor": "nx:run-commands",
             "dependsOn": ["build"],
             "options": {
-                "command": "node dist/apps/hr-enhancer/main.js"
+                "command": "export $(grep -v '^#' .env.local | xargs) && node dist/apps/hr-enhancer/main.js"
             }
         }
     }
