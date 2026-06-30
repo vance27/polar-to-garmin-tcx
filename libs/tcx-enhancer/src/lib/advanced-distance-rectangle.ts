@@ -125,6 +125,32 @@ function isWithinRectangle(
     return Math.abs(offset.x) <= width / 2 && Math.abs(offset.y) <= height / 2;
 }
 
+// Move at most maxStepMeters from current towards target, returning whether target was reached
+function stepTowardsPosition(
+    current: Position,
+    target: Position,
+    maxStepMeters: number
+): { position: Position; arrived: boolean } {
+    const distance = calculateDistance(current, target);
+    if (distance <= maxStepMeters) {
+        return { position: target, arrived: true };
+    }
+
+    const fraction = maxStepMeters / distance;
+    return {
+        position: {
+            LatitudeDegrees:
+                current.LatitudeDegrees +
+                (target.LatitudeDegrees - current.LatitudeDegrees) * fraction,
+            LongitudeDegrees:
+                current.LongitudeDegrees +
+                (target.LongitudeDegrees - current.LongitudeDegrees) *
+                    fraction,
+        },
+        arrived: false,
+    };
+}
+
 // Get distance from center of rectangle (for boundary calculations)
 function getDistanceFromRectangleCenter(
     position: Position,
@@ -418,19 +444,36 @@ export function interpolatePosition(
     const shouldBeOnSideline =
         speed === 0 && globalPositionState.stationaryTime > 3; // 3+ seconds stationary
 
-    if (shouldBeOnSideline && !globalPositionState.isOnSideline) {
-        // Moving to sideline
-        globalPositionState.isOnSideline = true;
-        globalPositionState.sidelinePosition = getRandomSidelinePosition(
-            width,
-            height,
-            rotation
-        );
-        return globalPositionState.sidelinePosition;
-    } else if (shouldBeOnSideline && globalPositionState.isOnSideline) {
-        // Stay on sideline with minor variation
+    // Walking pace used to move to/from the sideline gradually instead of
+    // teleporting there, which is what was causing the GPS "blips" Strava
+    // flags as bad data.
+    const SIDELINE_WALK_SPEED_MPS = 1.8;
+
+    if (shouldBeOnSideline) {
+        if (!globalPositionState.sidelinePosition) {
+            globalPositionState.sidelinePosition = getRandomSidelinePosition(
+                width,
+                height,
+                rotation
+            );
+        }
+
+        if (!globalPositionState.isOnSideline) {
+            // Walk towards the sideline instead of jumping there instantly
+            const { position: steppedPosition, arrived } =
+                stepTowardsPosition(
+                    globalPositionState.currentPosition,
+                    globalPositionState.sidelinePosition,
+                    SIDELINE_WALK_SPEED_MPS
+                );
+            globalPositionState.currentPosition = steppedPosition;
+            globalPositionState.isOnSideline = arrived;
+            return steppedPosition;
+        }
+
+        // Already on sideline: stay with minor variation
         const currentOffset = positionToOffset(
-            globalPositionState.sidelinePosition!,
+            globalPositionState.sidelinePosition,
             lat,
             lon,
             rotation
@@ -442,15 +485,23 @@ export function interpolatePosition(
             y: currentOffset.y + (Math.random() - 0.5) * 2,
         };
 
-        return offsetToPosition(
+        const variedPosition = offsetToPosition(
             variationOffset.x,
             variationOffset.y,
             lat,
             lon,
             rotation
         );
-    } else if (!shouldBeOnSideline && globalPositionState.isOnSideline) {
-        // Moving back from sideline to field
+        globalPositionState.currentPosition = variedPosition;
+        return variedPosition;
+    } else if (
+        globalPositionState.isOnSideline ||
+        globalPositionState.sidelinePosition
+    ) {
+        // Leaving the sideline: currentPosition already reflects where the
+        // player actually is (on or walking towards the sideline), so
+        // movement below resumes continuously from there instead of from a
+        // stale pre-sideline position.
         globalPositionState.isOnSideline = false;
         globalPositionState.sidelinePosition = null;
         // Generate new target when returning to field
@@ -459,6 +510,32 @@ export function interpolatePosition(
             height,
             rotation
         );
+    }
+
+    // If we're still outside the field boundary (e.g. just left the
+    // sideline, which sits beyond the rectangle on purpose), walk back in at
+    // a capped pace first. Otherwise the boundary clamp below would snap
+    // straight from the sideline distance to the rectangle edge in a single
+    // trackpoint, producing the same kind of GPS teleport this is meant to
+    // avoid.
+    if (
+        speed > 0 &&
+        !isWithinRectangle(
+            globalPositionState.currentPosition,
+            lat,
+            lon,
+            width,
+            height,
+            rotation
+        )
+    ) {
+        const { position: steppedPosition } = stepTowardsPosition(
+            globalPositionState.currentPosition,
+            globalPositionState.dynamicTarget,
+            SIDELINE_WALK_SPEED_MPS
+        );
+        globalPositionState.currentPosition = steppedPosition;
+        return steppedPosition;
     }
 
     // Normal field movement
